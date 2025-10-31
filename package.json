@@ -1,0 +1,27 @@
+{
+  "name": "promptsmith",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun scripts/build.ts",
+    "types": "tsc --noEmit",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage",
+    "lint": "biome check src",
+    "lint:fix": "biome check --apply src",
+    "format": "biome format --write src"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.2",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
+  },
+  "version": "0.0.1",
+  "author": "Valentin Galfré"
+}

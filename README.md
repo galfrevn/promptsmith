@@ -698,11 +698,16 @@ bun test --coverage
 
 ## Roadmap
 
-- [ ] 🎯 **v1.0**: Stable API, comprehensive docs
-- [ ] 🔄 **v1.1**: Streaming support, template variables
-- [ ] 🧠 **v1.2**: Memory/conversation context
-- [ ] 🌐 **v1.3**: Multi-language support
-- [ ] 🎨 **v2.0**: Visual prompt builder UI
+- [x] ✅ **v0.1**: Core builder API with type safety
+- [x] ✅ **v0.2**: Security features (guardrails, forbidden topics)
+- [x] ✅ **v0.3**: Tier 1 methods (context, examples, error handling)
+- [ ] 🎯 **v1.0**: Stable API, comprehensive documentation, npm publish
+- [ ] 🔄 **v1.1**: Template variables, dynamic content injection
+- [ ] 🧠 **v1.2**: Memory/conversation history methods
+- [ ] 📊 **v1.3**: Chain-of-thought reasoning configuration
+- [ ] 🔌 **v1.4**: Plugin system for custom extensions
+- [ ] 🎭 **v1.5**: Persona switching and role management
+- [ ] 📚 **v2.0**: Advanced tool orchestration, retrieval methods
 
 ## License
 

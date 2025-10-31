@@ -1,4 +1,4 @@
-import type { Constraint, ConstraintType, ToolDefinition } from "@/types";
+import type { AiSdkConfig, Constraint, ConstraintType, ExecutableToolDefinition, ToolDefinition } from "@/types";
 import { parseZodSchema } from "@/utils/schemas";
 
 /**
@@ -14,13 +14,13 @@ import { parseZodSchema } from "@/utils/schemas";
  * includes sections for which you've provided content, keeping it clean and
  * focused.
  *
- * ## Design Philosophy
+ * #### Design Philosophy
  *
  * This builder separates prompt generation (text for the AI model) from tool
  * execution (runtime logic). Tools are registered with metadata only - the
  * actual execution happens in your application when the AI requests to use a tool.
  *
- * ## Usage Pattern
+ * ##### Usage Pattern
  *
  * 1. Create a builder instance (typically via `createPromptBuilder()`)
  * 2. Chain method calls to configure the agent
@@ -316,6 +316,158 @@ export class SystemPromptBuilder {
 	 */
 	getTools(): ToolDefinition[] {
 		return this._tools;
+	}
+
+	/**
+	 * Exports tools in Vercel AI SDK format.
+	 *
+	 * This method converts PromptSmith tool definitions into the format expected
+	 * by Vercel's AI SDK. Each tool is transformed into an object with `description`,
+	 * `parameters` (the Zod schema), and an optional `execute` function.
+	 *
+	 * Tools that don't have an `execute` function will still be included, but with
+	 * `execute` set to `undefined`. This allows for:
+	 * - Documentation-only tools (appear in system prompt but not executable)
+	 * - Client-side tool handling (execution happens in the client)
+	 * - Mixed tool sets (some executable, some not)
+	 *
+	 * The returned object can be passed directly to AI SDK functions like
+	 * `generateText` or `streamText`.
+	 *
+	 * @returns A record mapping tool names to AI SDK-compatible tool definitions
+	 *
+	 * @example
+	 * ```typescript
+	 * import { generateText } from 'ai';
+	 * import { openai } from '@ai-sdk/openai';
+	 * import { createPromptBuilder } from 'promptsmith';
+	 * import { z } from 'zod';
+	 *
+	 * const builder = createPromptBuilder()
+	 *   .identity("You are a helpful weather assistant")
+	 *   .tool({
+	 *     name: "get_weather",
+	 *     description: "Get current weather for a location",
+	 *     schema: z.object({
+	 *       location: z.string().describe("City name")
+	 *     }),
+	 *     execute: async ({ location }) => {
+	 *       const response = await fetch(`https://api.weather.com/${location}`);
+	 *       return response.json();
+	 *     }
+	 *   })
+	 *   .tool({
+	 *     name: "get_forecast",
+	 *     description: "Get 5-day forecast",
+	 *     schema: z.object({
+	 *       location: z.string().describe("City name")
+	 *     }),
+	 *     execute: async ({ location }) => {
+	 *       const response = await fetch(`https://api.weather.com/${location}/forecast`);
+	 *       return response.json();
+	 *     }
+	 *   });
+	 *
+	 * const response = await generateText({
+	 *   model: openai('gpt-4'),
+	 *   system: builder.build(),
+	 *   tools: builder.toAiSdkTools(),
+	 *   prompt: "What's the weather in Paris?"
+	 * });
+	 * ```
+	 */
+	toAiSdkTools(): Record<
+		string,
+		{
+			description: string;
+			parameters: import("zod").ZodType;
+			execute?: (args: unknown) => Promise<unknown> | unknown;
+		}
+	> {
+		const aiTools: Record<
+			string,
+			{
+				description: string;
+				parameters: import("zod").ZodType;
+				execute?: (args: unknown) => Promise<unknown> | unknown;
+			}
+		> = {};
+
+		for (const tool of this._tools) {
+			const executableTool = tool as ExecutableToolDefinition;
+			aiTools[tool.name] = {
+				description: tool.description,
+				parameters: tool.schema,
+				execute: executableTool.execute,
+			};
+		}
+
+		return aiTools;
+	}
+
+	/**
+	 * Exports a complete AI SDK configuration object.
+	 *
+	 * This is a convenience method that returns both the system prompt and tools
+	 * in a single object, ready to spread into Vercel AI SDK function calls.
+	 *
+	 * The returned object contains:
+	 * - `system`: The complete system prompt (same as calling `.build()`)
+	 * - `tools`: Tools in AI SDK format (same as calling `.toAiSdkTools()`)
+	 *
+	 * This method is particularly useful when using the spread operator, allowing
+	 * you to define your agent configuration once and use it seamlessly with the
+	 * AI SDK.
+	 *
+	 * @returns An object with `system` and `tools` properties ready for AI SDK
+	 *
+	 * @example
+	 * ```typescript
+	 * import { generateText } from 'ai';
+	 * import { openai } from '@ai-sdk/openai';
+	 * import { createPromptBuilder } from 'promptsmith';
+	 * import { z } from 'zod';
+	 *
+	 * const builder = createPromptBuilder()
+	 *   .identity("You are a helpful weather assistant")
+	 *   .capabilities(["Provide weather information", "Give forecasts"])
+	 *   .tool({
+	 *     name: "get_weather",
+	 *     description: "Get current weather for a location",
+	 *     schema: z.object({
+	 *       location: z.string().describe("City name")
+	 *     }),
+	 *     execute: async ({ location }) => {
+	 *       const response = await fetch(`https://api.weather.com/${location}`);
+	 *       return response.json();
+	 *     }
+	 *   })
+	 *   .constraint("must", "Always verify location exists before providing weather")
+	 *   .withTone("Be friendly and helpful");
+	 *
+	 * // Ultra clean usage with spread operator
+	 * const response = await generateText({
+	 *   model: openai('gpt-4'),
+	 *   ...builder.toAiSdk(),
+	 *   prompt: "What's the weather in Paris?",
+	 *   maxSteps: 5
+	 * });
+	 *
+	 * // Or destructured if you prefer
+	 * const { system, tools } = builder.toAiSdk();
+	 * const response2 = await generateText({
+	 *   model: openai('gpt-4'),
+	 *   system,
+	 *   tools,
+	 *   prompt: "What's the weather?"
+	 * });
+	 * ```
+	 */
+	toAiSdk(): AiSdkConfig {
+		return {
+			system: this.build(),
+			tools: this.toAiSdkTools(),
+		};
 	}
 
 	/**

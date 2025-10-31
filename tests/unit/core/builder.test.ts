@@ -703,4 +703,295 @@ describe("SystemPromptBuilder", () => {
       expect(prompt).not.toContain("# Available Tools");
     });
   });
+
+  describe("AI SDK Integration", () => {
+    describe("toAiSdkTools()", () => {
+      test("exports tool with execute function", async () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "get_weather",
+            description: "Get the weather for a city",
+            schema: z.object({
+              city: z.string().describe("The city name")
+            }),
+            execute: async ({ city }) => {
+              return { temperature: 72, city };
+            }
+          });
+
+        const tools = builder.toAiSdkTools();
+
+        expect(tools.get_weather).toBeDefined();
+        expect(tools.get_weather.description).toBe("Get the weather for a city");
+        expect(tools.get_weather.parameters).toBeDefined();
+        expect(typeof tools.get_weather.execute).toBe("function");
+
+        // Test that execute function works
+        const result = await tools.get_weather.execute?.({ city: "Paris" });
+        expect(result).toEqual({ temperature: 72, city: "Paris" });
+      });
+
+      test("exports tool without execute function as undefined", () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "analyze_sentiment",
+            description: "Analyze text sentiment",
+            schema: z.object({
+              text: z.string().describe("Text to analyze")
+            })
+          });
+
+        const tools = builder.toAiSdkTools();
+
+        expect(tools.analyze_sentiment).toBeDefined();
+        expect(tools.analyze_sentiment.description).toBe("Analyze text sentiment");
+        expect(tools.analyze_sentiment.parameters).toBeDefined();
+        expect(tools.analyze_sentiment.execute).toBeUndefined();
+      });
+
+      test("exports multiple tools with mixed execute functions", async () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "tool_with_execute",
+            description: "Tool with execution",
+            schema: z.object({ input: z.string() }),
+            execute: async ({ input }) => `Result: ${input}`
+          })
+          .tool({
+            name: "tool_without_execute",
+            description: "Tool without execution",
+            schema: z.object({ data: z.number() })
+          })
+          .tool({
+            name: "another_with_execute",
+            description: "Another executable tool",
+            schema: z.object({ value: z.boolean() }),
+            execute: ({ value }) => ({ processed: value })
+          });
+
+        const tools = builder.toAiSdkTools();
+
+        expect(Object.keys(tools)).toHaveLength(3);
+        expect(typeof tools.tool_with_execute.execute).toBe("function");
+        expect(tools.tool_without_execute.execute).toBeUndefined();
+        expect(typeof tools.another_with_execute.execute).toBe("function");
+
+        // Test execution
+        const result1 = await tools.tool_with_execute.execute?.({ input: "test" });
+        expect(result1).toBe("Result: test");
+
+        const result2 = tools.another_with_execute.execute?.({ value: true });
+        expect(result2).toEqual({ processed: true });
+      });
+
+      test("returns empty object for builder with no tools", () => {
+        const builder = createPromptBuilder()
+          .identity("Test assistant");
+
+        const tools = builder.toAiSdkTools();
+
+        expect(tools).toEqual({});
+        expect(Object.keys(tools)).toHaveLength(0);
+      });
+
+      test("uses tool name as key in returned object", () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "custom_tool_name",
+            description: "A custom tool",
+            schema: z.object({})
+          });
+
+        const tools = builder.toAiSdkTools();
+
+        expect(tools.custom_tool_name).toBeDefined();
+        expect(tools["custom_tool_name"]).toBeDefined();
+      });
+
+      test("correctly maps description and parameters", () => {
+        const schema = z.object({
+          location: z.string().describe("City name"),
+          units: z.enum(["celsius", "fahrenheit"]).optional()
+        });
+
+        const builder = createPromptBuilder()
+          .tool({
+            name: "weather",
+            description: "Get weather information",
+            schema: schema
+          });
+
+        const tools = builder.toAiSdkTools();
+
+        expect(tools.weather.description).toBe("Get weather information");
+        expect(tools.weather.parameters).toBe(schema);
+      });
+
+      test("handles synchronous execute functions", () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "add",
+            description: "Add two numbers",
+            schema: z.object({
+              a: z.number(),
+              b: z.number()
+            }),
+            execute: ({ a, b }) => a + b
+          });
+
+        const tools = builder.toAiSdkTools();
+        const result = tools.add.execute?.({ a: 2, b: 3 });
+
+        expect(result).toBe(5);
+      });
+
+      test("handles asynchronous execute functions", async () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "fetch_data",
+            description: "Fetch data",
+            schema: z.object({ url: z.string() }),
+            execute: async ({ url }) => {
+              await new Promise(resolve => setTimeout(resolve, 10));
+              return { data: `fetched from ${url}` };
+            }
+          });
+
+        const tools = builder.toAiSdkTools();
+        const result = await tools.fetch_data.execute?.({ url: "https://api.example.com" });
+
+        expect(result).toEqual({ data: "fetched from https://api.example.com" });
+      });
+    });
+
+    describe("toAiSdk()", () => {
+      test("returns object with system and tools properties", () => {
+        const builder = createPromptBuilder()
+          .identity("Test assistant")
+          .tool({
+            name: "test_tool",
+            description: "A test tool",
+            schema: z.object({ input: z.string() }),
+            execute: ({ input }) => input
+          });
+
+        const config = builder.toAiSdk();
+
+        expect(config).toHaveProperty("system");
+        expect(config).toHaveProperty("tools");
+        expect(typeof config.system).toBe("string");
+        expect(typeof config.tools).toBe("object");
+      });
+
+      test("system property matches build() output", () => {
+        const builder = createPromptBuilder()
+          .identity("You are a helpful assistant")
+          .capabilities(["Answer questions", "Provide information"])
+          .constraint("must", "Always be helpful");
+
+        const config = builder.toAiSdk();
+        const builtPrompt = builder.build();
+
+        expect(config.system).toBe(builtPrompt);
+      });
+
+      test("tools property matches toAiSdkTools() output", () => {
+        const builder = createPromptBuilder()
+          .tool({
+            name: "tool1",
+            description: "First tool",
+            schema: z.object({ a: z.string() }),
+            execute: ({ a }) => a
+          })
+          .tool({
+            name: "tool2",
+            description: "Second tool",
+            schema: z.object({ b: z.number() })
+          });
+
+        const config = builder.toAiSdk();
+        const tools = builder.toAiSdkTools();
+
+        expect(config.tools).toEqual(tools);
+      });
+
+      test("can be destructured for use with AI SDK", () => {
+        const builder = createPromptBuilder()
+          .identity("Weather assistant")
+          .tool({
+            name: "get_weather",
+            description: "Get weather",
+            schema: z.object({ location: z.string() }),
+            execute: async ({ location }) => ({ temp: 20, location })
+          });
+
+        const { system, tools } = builder.toAiSdk();
+
+        expect(typeof system).toBe("string");
+        expect(system).toContain("Weather assistant");
+        expect(tools.get_weather).toBeDefined();
+        expect(typeof tools.get_weather.execute).toBe("function");
+      });
+
+      test("works with builder that has no tools", () => {
+        const builder = createPromptBuilder()
+          .identity("Simple assistant")
+          .capabilities(["Chat", "Help"]);
+
+        const config = builder.toAiSdk();
+
+        expect(config.system).toContain("Simple assistant");
+        expect(config.tools).toEqual({});
+      });
+
+      test("includes all builder configuration in system prompt", () => {
+        const builder = createPromptBuilder()
+          .identity("Complex assistant")
+          .capabilities(["Capability 1", "Capability 2"])
+          .tool({
+            name: "tool1",
+            description: "Tool description",
+            schema: z.object({ param: z.string() })
+          })
+          .constraint("must", "Be accurate")
+          .constraint("must_not", "Make assumptions")
+          .withTone("Professional and friendly")
+          .output("Use markdown format");
+
+        const config = builder.toAiSdk();
+
+        expect(config.system).toContain("Complex assistant");
+        expect(config.system).toContain("Capability 1");
+        expect(config.system).toContain("tool1");
+        expect(config.system).toContain("Be accurate");
+        expect(config.system).toContain("Professional and friendly");
+        expect(config.system).toContain("Use markdown format");
+      });
+
+      test("can be spread into AI SDK function calls", () => {
+        const builder = createPromptBuilder()
+          .identity("Test")
+          .tool({
+            name: "test",
+            description: "Test",
+            schema: z.object({}),
+            execute: () => "result"
+          });
+
+        const config = builder.toAiSdk();
+        
+        // Simulate spreading into an AI SDK call
+        const mockAiSdkParams = {
+          model: "test-model",
+          ...config,
+          prompt: "Test prompt"
+        };
+
+        expect(mockAiSdkParams.system).toBeDefined();
+        expect(mockAiSdkParams.tools).toBeDefined();
+        expect(mockAiSdkParams.model).toBe("test-model");
+        expect(mockAiSdkParams.prompt).toBe("Test prompt");
+      });
+    });
+  });
 });

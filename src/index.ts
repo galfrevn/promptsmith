@@ -68,9 +68,9 @@
 /**
  * Core builder class and factory
  */
-export { SystemPromptBuilder, createPromptBuilder } from "@/core/builder";
+export { createPromptBuilder, SystemPromptBuilder } from "@/core/builder";
 
 /**
  * Type definitions
  */
-export type { ToolDefinition, Constraint, ConstraintType } from "@/types";
+export type { Constraint, ConstraintType, ToolDefinition } from "@/types";

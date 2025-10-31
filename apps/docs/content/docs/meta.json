@@ -1,0 +1,10 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "getting-started",
+    "builder-api",
+    "tools",
+    "ai-sdk-integration"
+  ]
+}

@@ -1,0 +1,162 @@
+---
+title: Introduction
+description: Build type-safe system prompts for AI agents
+---
+
+# Promptsmith
+
+**Promptsmith** is a TypeScript library for building type-safe, structured system prompts for AI agents using a fluent builder pattern.
+
+## Why Promptsmith?
+
+Creating effective system prompts for AI agents can be challenging:
+
+- **Inconsistency**: Prompts vary in structure and completeness
+- **Type Safety**: No validation of tool schemas and parameters
+- **Maintainability**: Hard to update and version control scattered prompt strings
+- **Integration**: Complex setup when integrating with AI frameworks
+
+Promptsmith solves these problems by providing:
+
+✅ **Type-Safe Tool Definitions** - Define tools with Zod schemas for full type safety  
+✅ **Fluent Builder API** - Chain methods to build prompts incrementally  
+✅ **Structured Output** - Generate consistent, well-formatted markdown prompts  
+✅ **AI SDK Integration** - Seamless integration with Vercel AI SDK  
+✅ **Zero Dependencies** - Only requires Zod (which you likely already use)
+
+## Quick Example
+
+```typescript
+import { createPromptBuilder } from "@promptsmith/core";
+import { z } from "zod";
+
+const prompt = createPromptBuilder()
+  .identity("You are a helpful weather assistant")
+  .capabilities([
+    "Provide current weather information",
+    "Give weather forecasts",
+    "Explain weather patterns",
+  ])
+  .tool({
+    name: "get_weather",
+    description: "Get current weather for a location",
+    schema: z.object({
+      location: z.string().describe("City name or ZIP code"),
+      units: z.enum(["celsius", "fahrenheit"]).optional(),
+    }),
+    execute: async ({ location }) => {
+      // Your weather API call here
+      return { temp: 72, condition: "sunny" };
+    },
+  })
+  .constraint("must", "Always specify temperature units")
+  .withTone("Be friendly and conversational")
+  .build();
+
+console.log(prompt);
+```
+
+This generates a structured markdown prompt ready to use with any AI model.
+
+## Key Features
+
+### 🎯 Identity & Capabilities
+
+Define who your agent is and what it can do:
+
+```typescript
+builder
+  .identity("You are an expert travel assistant")
+  .capability("Search for flights and hotels")
+  .capability("Provide destination recommendations");
+```
+
+### 🛠️ Type-Safe Tools
+
+Register tools with full TypeScript type inference:
+
+```typescript
+builder.tool({
+  name: "search_docs",
+  description: "Search technical documentation",
+  schema: z.object({
+    query: z.string().describe("Search query"),
+    limit: z.number().optional().describe("Max results"),
+  }),
+  execute: async ({ query, limit }) => {
+    // Fully typed parameters!
+    return searchResults;
+  },
+});
+```
+
+### 📋 Behavioral Guidelines
+
+Set constraints with different severity levels:
+
+```typescript
+builder
+  .constraint("must", "Always verify user authentication")
+  .constraint("must_not", "Never store sensitive data")
+  .constraint("should", "Provide concise responses")
+  .constraint("should_not", "Avoid technical jargon");
+```
+
+### 🎨 Communication Style
+
+Define tone and output format:
+
+```typescript
+builder
+  .withTone("Be professional but approachable")
+  .output("Format responses as:\n1. Summary\n2. Details\n3. Next steps");
+```
+
+### 🔌 AI SDK Integration
+
+Use with Vercel AI SDK in one line:
+
+```typescript
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+const response = await generateText({
+  model: openai("gpt-4"),
+  ...builder.toAiSdk(), // System prompt + tools
+  prompt: "What's the weather in Paris?",
+});
+```
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="Getting Started"
+    href="/docs/getting-started"
+    description="Install Promptsmith and create your first prompt"
+  />
+  <Card
+    title="Builder API"
+    href="/docs/builder-api"
+    description="Learn about all available builder methods"
+  />
+  <Card
+    title="Tools"
+    href="/docs/tools"
+    description="Define and manage AI agent tools"
+  />
+  <Card
+    title="AI SDK Integration"
+    href="/docs/ai-sdk-integration"
+    description="Integrate with Vercel AI SDK"
+  />
+</Cards>
+
+## Philosophy
+
+Promptsmith follows a clear separation of concerns:
+
+- **Prompt Generation** - What the AI model sees (text documentation)
+- **Tool Execution** - What your application does (runtime logic)
+
+Tools are registered with metadata for the AI to understand, while execution happens in your application when the AI requests to use a tool.

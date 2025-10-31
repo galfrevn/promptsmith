@@ -10,11 +10,15 @@
     "test:coverage": "bun test --coverage",
     "lint": "biome check src",
     "lint:fix": "biome check --apply src",
-    "format": "biome format --write src"
+    "format": "biome format --write src",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.2",
-    "@types/bun": "latest"
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@types/bun": "latest",
+    "husky": "^9.1.7"
   },
   "peerDependencies": {
     "typescript": "^5"

@@ -185,6 +185,66 @@ export type Constraint = {
 };
 
 /**
+ * Represents a single example for few-shot learning in the system prompt.
+ *
+ * Examples demonstrate desired behavior to the AI model through concrete
+ * input-output pairs. This is one of the most effective techniques for
+ * guiding model behavior and ensuring consistency.
+ *
+ * You can use either `user`/`assistant` (conversational style) or
+ * `input`/`output` (function-call style) - they are equivalent. The optional
+ * `explanation` field can provide additional context about why this example
+ * demonstrates good behavior.
+ *
+ * @example
+ * ```typescript
+ * // Conversational style
+ * {
+ *   user: "What's the weather in Paris?",
+ *   assistant: "I'll check the weather for you. Let me use the get_weather tool.",
+ *   explanation: "Shows proper tool usage for weather queries"
+ * }
+ *
+ * // Function-call style
+ * {
+ *   input: "Schedule appointment for tomorrow at 3pm",
+ *   output: "Let me check availability for tomorrow at 3 PM."
+ * }
+ * ```
+ */
+export type Example = {
+  /**
+   * User's input message (conversational style).
+   * Use this OR `input`, not both.
+   */
+  user?: string;
+
+  /**
+   * Agent's response (conversational style).
+   * Use this OR `output`, not both.
+   */
+  assistant?: string;
+
+  /**
+   * Input to the agent (function-call style).
+   * Use this OR `user`, not both.
+   */
+  input?: string;
+
+  /**
+   * Agent's output (function-call style).
+   * Use this OR `assistant`, not both.
+   */
+  output?: string;
+
+  /**
+   * Optional explanation of what this example demonstrates.
+   * Helps clarify the reasoning behind the example.
+   */
+  explanation?: string;
+};
+
+/**
  * Configuration object returned by `.toAiSdk()` for Vercel AI SDK integration.
  *
  * This interface defines the structure of the object returned by the `toAiSdk()`

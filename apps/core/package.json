@@ -1,7 +1,45 @@
 {
   "name": "@promptsmith/core",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Type-safe system prompt builder for AI agents with fluent API",
+  "author": "Valentín Galfré <galfre.vn@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/galfrevn/promptsmith.git",
+    "directory": "apps/core"
+  },
+  "homepage": "https://github.com/galfrevn/promptsmith#readme",
+  "bugs": {
+    "url": "https://github.com/galfrevn/promptsmith/issues"
+  },
+  "keywords": [
+    "ai",
+    "prompt",
+    "llm",
+    "gpt",
+    "system-prompt",
+    "prompt-engineering",
+    "ai-agents",
+    "typescript",
+    "builder",
+    "vercel-ai-sdk"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "bun scripts/build.ts",
     "test": "bun test",

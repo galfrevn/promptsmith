@@ -69,16 +69,16 @@ Whether you're building chatbots, AI assistants, or autonomous agents, Promptsmi
 
 ```bash
 # npm
-npm install promptsmith zod
+npm install @promptsmith/core zod
 
 # pnpm
-pnpm add promptsmith zod
+pnpm add @promptsmith/core zod
 
 # yarn
-yarn add promptsmith zod
+yarn add @promptsmith/core zod
 
 # bun
-bun add promptsmith zod
+bun add @promptsmith/core zod
 ```
 
 > **Note**: Zod is a peer dependency required for tool schema validation.
@@ -86,7 +86,7 @@ bun add promptsmith zod
 ## Quick Start
 
 ```typescript
-import { createPromptBuilder } from "promptsmith";
+import { createPromptBuilder } from "@promptsmith/core";
 import { z } from "zod";
 
 const prompt = createPromptBuilder()
@@ -168,7 +168,7 @@ Friendly, professional, and helpful
 ### Basic Configuration
 
 ```typescript
-import { createPromptBuilder } from "promptsmith";
+import { createPromptBuilder } from "@promptsmith/core";
 
 const prompt = createPromptBuilder()
   .identity("You are an expert travel assistant")
@@ -307,7 +307,7 @@ Promptsmith works seamlessly with Vercel AI SDK:
 ```typescript
 import { generateText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { createPromptBuilder } from "promptsmith";
+import { createPromptBuilder } from "@promptsmith/core";
 import { z } from "zod";
 
 const builder = createPromptBuilder()

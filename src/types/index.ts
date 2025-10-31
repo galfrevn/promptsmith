@@ -28,46 +28,46 @@ import type { z } from "zod";
  * ```
  */
 export interface ToolDefinition<T extends z.ZodType = z.ZodType> {
-  /**
-   * Unique identifier for the tool.
-   *
-   * This name is used by the AI model to reference the tool when it decides to use it.
-   * Should be descriptive, snake_case, and unique within your toolset.
-   *
-   * @example "get_weather", "search_database", "send_email"
-   */
-  name: string;
+	/**
+	 * Unique identifier for the tool.
+	 *
+	 * This name is used by the AI model to reference the tool when it decides to use it.
+	 * Should be descriptive, snake_case, and unique within your toolset.
+	 *
+	 * @example "get_weather", "search_database", "send_email"
+	 */
+	name: string;
 
-  /**
-   * Human-readable description of what the tool does and when to use it.
-   *
-   * This description is shown to the AI model in the system prompt. It should clearly
-   * explain the tool's purpose, what it returns, and any important usage guidelines.
-   * Be specific about when the model should choose this tool over others.
-   *
-   * @example "Retrieves current weather data for a given location. Use this when the user asks about weather conditions, temperature, or forecasts."
-   */
-  description: string;
+	/**
+	 * Human-readable description of what the tool does and when to use it.
+	 *
+	 * This description is shown to the AI model in the system prompt. It should clearly
+	 * explain the tool's purpose, what it returns, and any important usage guidelines.
+	 * Be specific about when the model should choose this tool over others.
+	 *
+	 * @example "Retrieves current weather data for a given location. Use this when the user asks about weather conditions, temperature, or forecasts."
+	 */
+	description: string;
 
-  /**
-   * Zod schema defining the tool's input parameters.
-   *
-   * This schema serves dual purposes:
-   * 1. Documents the parameters in the system prompt (via introspection)
-   * 2. Can be used at runtime to validate tool invocation arguments
-   *
-   * Use `.describe()` on schema fields to provide parameter descriptions that will
-   * appear in the generated system prompt.
-   *
-   * @example
-   * ```typescript
-   * z.object({
-   *   query: z.string().describe("The search query text"),
-   *   limit: z.number().optional().describe("Maximum results to return")
-   * })
-   * ```
-   */
-  schema: T;
+	/**
+	 * Zod schema defining the tool's input parameters.
+	 *
+	 * This schema serves dual purposes:
+	 * 1. Documents the parameters in the system prompt (via introspection)
+	 * 2. Can be used at runtime to validate tool invocation arguments
+	 *
+	 * Use `.describe()` on schema fields to provide parameter descriptions that will
+	 * appear in the generated system prompt.
+	 *
+	 * @example
+	 * ```typescript
+	 * z.object({
+	 *   query: z.string().describe("The search query text"),
+	 *   limit: z.number().optional().describe("Maximum results to return")
+	 * })
+	 * ```
+	 */
+	schema: T;
 }
 
 /**
@@ -101,27 +101,27 @@ export interface ToolDefinition<T extends z.ZodType = z.ZodType> {
  * ```
  */
 export interface ExecutableToolDefinition<T extends z.ZodType = z.ZodType>
-  extends ToolDefinition<T> {
-  /**
-   * Execution function for the tool (optional).
-   *
-   * When provided, this function implements the actual tool logic. It receives
-   * the validated arguments (matching the schema) and returns the tool's result.
-   *
-   * The function can be either synchronous or asynchronous (returning a Promise).
-   *
-   * @param args - The tool arguments, typed according to the schema
-   * @returns The tool's result (any type), or a Promise resolving to the result
-   *
-   * @example
-   * ```typescript
-   * execute: async ({ query }) => {
-   *   const results = await searchDatabase(query);
-   *   return results;
-   * }
-   * ```
-   */
-  execute?: (args: z.infer<T>) => Promise<unknown> | unknown;
+	extends ToolDefinition<T> {
+	/**
+	 * Execution function for the tool (optional).
+	 *
+	 * When provided, this function implements the actual tool logic. It receives
+	 * the validated arguments (matching the schema) and returns the tool's result.
+	 *
+	 * The function can be either synchronous or asynchronous (returning a Promise).
+	 *
+	 * @param args - The tool arguments, typed according to the schema
+	 * @returns The tool's result (any type), or a Promise resolving to the result
+	 *
+	 * @example
+	 * ```typescript
+	 * execute: async ({ query }) => {
+	 *   const results = await searchDatabase(query);
+	 *   return results;
+	 * }
+	 * ```
+	 */
+	execute?: (args: z.infer<T>) => Promise<unknown> | unknown;
 }
 
 /**
@@ -164,24 +164,24 @@ export type ConstraintType = "must" | "must_not" | "should" | "should_not";
  * ```
  */
 export interface Constraint {
-  /**
-   * The severity level of this constraint.
-   *
-   * Determines how this constraint is grouped and presented in the system prompt.
-   * Higher severity (must/must_not) indicates non-negotiable requirements, while
-   * lower severity (should/should_not) indicates preferences and recommendations.
-   */
-  type: ConstraintType;
+	/**
+	 * The severity level of this constraint.
+	 *
+	 * Determines how this constraint is grouped and presented in the system prompt.
+	 * Higher severity (must/must_not) indicates non-negotiable requirements, while
+	 * lower severity (should/should_not) indicates preferences and recommendations.
+	 */
+	type: ConstraintType;
 
-  /**
-   * The actual constraint rule text.
-   *
-   * Should be written as a clear, actionable guideline. Use imperative mood
-   * and be specific about the expected behavior. Avoid ambiguous language.
-   *
-   * @example "Cite sources for all factual claims", "Avoid technical jargon when explaining to beginners"
-   */
-  rule: string;
+	/**
+	 * The actual constraint rule text.
+	 *
+	 * Should be written as a clear, actionable guideline. Use imperative mood
+	 * and be specific about the expected behavior. Avoid ambiguous language.
+	 *
+	 * @example "Cite sources for all factual claims", "Avoid technical jargon when explaining to beginners"
+	 */
+	rule: string;
 }
 
 /**
@@ -209,30 +209,30 @@ export interface Constraint {
  * ```
  */
 export interface AiSdkConfig {
-  /**
-   * The system prompt string generated by the builder.
-   *
-   * This is the same string returned by `.build()`, containing the complete
-   * markdown-formatted system prompt with identity, capabilities, tools
-   * documentation, constraints, and formatting guidelines.
-   */
-  system: string;
+	/**
+	 * The system prompt string generated by the builder.
+	 *
+	 * This is the same string returned by `.build()`, containing the complete
+	 * markdown-formatted system prompt with identity, capabilities, tools
+	 * documentation, constraints, and formatting guidelines.
+	 */
+	system: string;
 
-  /**
-   * Tools in Vercel AI SDK format.
-   *
-   * A record mapping tool names to their AI SDK-compatible definitions,
-   * including description, parameters (Zod schema), and optional execute function.
-   *
-   * Tools without an `execute` function will have `execute` set to `undefined`,
-   * allowing for documentation-only tools or client-side tool handling.
-   */
-  tools: Record<
-    string,
-    {
-      description: string;
-      parameters: z.ZodType;
-      execute?: (args: unknown) => Promise<unknown> | unknown;
-    }
-  >;
+	/**
+	 * Tools in Vercel AI SDK format.
+	 *
+	 * A record mapping tool names to their AI SDK-compatible definitions,
+	 * including description, parameters (Zod schema), and optional execute function.
+	 *
+	 * Tools without an `execute` function will have `execute` set to `undefined`,
+	 * allowing for documentation-only tools or client-side tool handling.
+	 */
+	tools: Record<
+		string,
+		{
+			description: string;
+			parameters: z.ZodType;
+			execute?: (args: unknown) => Promise<unknown> | unknown;
+		}
+	>;
 }

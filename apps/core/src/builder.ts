@@ -39,20 +39,20 @@ import type {
  * import { z } from "zod";
  *
  * const prompt = createPromptBuilder()
- *   .identity("You are a helpful coding assistant")
- *   .capabilities([
+ *   .withIdentity("You are a helpful coding assistant")
+ *   .withCapabilities([
  *     "Explain code concepts",
  *     "Write code examples",
  *     "Debug issues"
  *   ])
- *   .tool({
+ *   .withTool({
  *     name: "search_docs",
  *     description: "Search technical documentation",
  *     schema: z.object({
  *       query: z.string().describe("Search query")
  *     })
  *   })
- *   .constraint("must", "Always provide working code examples")
+ *   .withConstraint("must", "Always provide working code examples")
  *   .withTone("Be patient and encouraging")
  *   .build();
  * ```
@@ -86,12 +86,12 @@ export class SystemPromptBuilder {
    *
    * @example
    * ```typescript
-   * builder.identity("You are an expert travel assistant specializing in European destinations");
+   * builder.withIdentity("You are an expert travel assistant specializing in European destinations");
    *
-   * builder.identity("You are a senior software engineer with 10 years of experience in distributed systems");
+   * builder.withIdentity("You are a senior software engineer with 10 years of experience in distributed systems");
    * ```
    */
-  identity(text: string): this {
+  withIdentity(text: string): this {
     this._identity = text;
     return this;
   }
@@ -111,12 +111,12 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * builder
-   *   .capability("Search and analyze research papers")
-   *   .capability("Generate literature reviews")
-   *   .capability("Explain complex scientific concepts");
+   *   .withCapability("Search and analyze research papers")
+   *   .withCapability("Generate literature reviews")
+   *   .withCapability("Explain complex scientific concepts");
    * ```
    */
-  capability(cap: string): this {
+  withCapability(cap: string): this {
     if (cap) {
       this._capabilities.push(cap);
     }
@@ -127,7 +127,7 @@ export class SystemPromptBuilder {
    * Adds multiple capabilities at once to the agent's skillset.
    *
    * This is a convenience method for adding several capabilities in a single
-   * call, equivalent to calling `.capability()` multiple times. Empty strings
+   * call, equivalent to calling `.withCapability()` multiple times. Empty strings
    * in the array are filtered out automatically.
    *
    * @param caps - An array of capability descriptions. Each should describe a
@@ -137,7 +137,7 @@ export class SystemPromptBuilder {
    *
    * @example
    * ```typescript
-   * builder.capabilities([
+   * builder.withCapabilities([
    *   "Analyze financial data and trends",
    *   "Calculate investment returns",
    *   "Provide risk assessments",
@@ -145,7 +145,7 @@ export class SystemPromptBuilder {
    * ]);
    * ```
    */
-  capabilities(caps: string[]): this {
+  withCapabilities(caps: string[]): this {
     this._capabilities.push(...caps.filter((c) => c));
     return this;
   }
@@ -171,7 +171,7 @@ export class SystemPromptBuilder {
    *
    * @example
    * ```typescript
-   * builder.tool({
+   * builder.withTool({
    *   name: "get_weather",
    *   description: "Retrieves current weather for a location. Use when user asks about weather.",
    *   schema: z.object({
@@ -181,7 +181,7 @@ export class SystemPromptBuilder {
    * });
    *
    * // With execution logic
-   * builder.tool({
+   * builder.withTool({
    *   name: "get_weather",
    *   description: "Get current weather",
    *   schema: z.object({ location: z.string() }),
@@ -192,7 +192,7 @@ export class SystemPromptBuilder {
    * });
    * ```
    */
-  tool<T extends import("zod").ZodType>(
+  withTool<T extends import("zod").ZodType>(
     def: ExecutableToolDefinition<T>
   ): this {
     this._tools.push(def);
@@ -203,7 +203,7 @@ export class SystemPromptBuilder {
    * Registers multiple tools at once.
    *
    * This is a convenience method for adding several tools in a single call,
-   * equivalent to calling `.tool()` multiple times. Useful when you have a
+   * equivalent to calling `.withTool()` multiple times. Useful when you have a
    * pre-defined collection of tools to register.
    *
    * @param defs - An array of tool definitions
@@ -217,10 +217,10 @@ export class SystemPromptBuilder {
    *   { name: "tool2", description: "Second tool", schema: z.object({...}), execute: async (...) => {...} }
    * ];
    *
-   * builder.tools(myTools);
+   * builder.withTools(myTools);
    * ```
    */
-  tools(defs: ExecutableToolDefinition[]): this {
+  withTools(defs: ExecutableToolDefinition[]): this {
     this._tools.push(...defs);
     return this;
   }
@@ -249,13 +249,13 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * builder
-   *   .constraint("must", "Always verify user authentication before accessing personal data")
-   *   .constraint("must_not", "Never store or log sensitive information")
-   *   .constraint("should", "Provide concise responses unless detail is requested")
-   *   .constraint("should_not", "Avoid using technical jargon with non-technical users");
+   *   .withConstraint("must", "Always verify user authentication before accessing personal data")
+   *   .withConstraint("must_not", "Never store or log sensitive information")
+   *   .withConstraint("should", "Provide concise responses unless detail is requested")
+   *   .withConstraint("should_not", "Avoid using technical jargon with non-technical users");
    * ```
    */
-  constraint(type: ConstraintType, rule: string): this {
+  withConstraint(type: ConstraintType, rule: string): this {
     if (rule) {
       this._constraints.push({ type, rule });
     }
@@ -278,9 +278,9 @@ export class SystemPromptBuilder {
    *
    * @example
    * ```typescript
-   * builder.output("Respond in this format:\n1. Summary\n2. Details\n3. Next steps");
+   * builder.withOutput("Respond in this format:\n1. Summary\n2. Details\n3. Next steps");
    *
-   * builder.output(`
+   * builder.withOutput(`
    *   Use the following structure:
    *   - Brief overview (2-3 sentences)
    *   - Bullet points for key information
@@ -289,7 +289,7 @@ export class SystemPromptBuilder {
    * `);
    * ```
    */
-  output(format: string): this {
+  withOutput(format: string): this {
     this._outputFormat = format;
     return this;
   }
@@ -309,14 +309,14 @@ export class SystemPromptBuilder {
    *
    * @example
    * ```typescript
-   * builder.tone("Be friendly, enthusiastic, and encouraging. Use a conversational tone.");
+   * builder.withTone("Be friendly, enthusiastic, and encouraging. Use a conversational tone.");
    *
-   * builder.tone("Maintain a professional and formal tone. Be precise and avoid casual language.");
+   * builder.withTone("Maintain a professional and formal tone. Be precise and avoid casual language.");
    *
-   * builder.tone("Be patient and educational. Explain concepts clearly without being condescending.");
+   * builder.withTone("Be patient and educational. Explain concepts clearly without being condescending.");
    * ```
    */
-  tone(tone: string): this {
+  withTone(tone: string): this {
     this._tone = tone;
     return this;
   }
@@ -354,21 +354,21 @@ export class SystemPromptBuilder {
    * ```typescript
    * // Basic usage with guardrails
    * const prompt = createPromptBuilder()
-   *   .identity("You are a customer service assistant")
-   *   .capability("Help users with product inquiries")
-   *   .guardrails()
+   *   .withIdentity("You are a customer service assistant")
+   *   .withCapability("Help users with product inquiries")
+   *   .withGuardrails()
    *   .build();
    *
    * // Combined with other security measures
    * const securePrompt = createPromptBuilder()
-   *   .identity("You are a financial advisor assistant")
-   *   .guardrails()
-   *   .forbiddenTopics(["Personal investment advice"])
-   *   .constraint("must", "Always verify user identity before discussing accounts")
+   *   .withIdentity("You are a financial advisor assistant")
+   *   .withGuardrails()
+   *   .withForbiddenTopics(["Personal investment advice"])
+   *   .withConstraint("must", "Always verify user identity before discussing accounts")
    *   .build();
    * ```
    */
-  guardrails(): this {
+  withGuardrails(): this {
     this._guardrailsEnabled = true;
     return this;
   }
@@ -399,14 +399,14 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * // Restrict medical and legal advice
-   * builder.forbiddenTopics([
+   * builder.withForbiddenTopics([
    *   "Medical diagnosis or treatment advice",
    *   "Legal advice or interpretation of laws",
    *   "Financial investment recommendations"
    * ]);
    *
    * // Avoid controversial topics for a general-purpose assistant
-   * builder.forbiddenTopics([
+   * builder.withForbiddenTopics([
    *   "Political opinions or endorsements",
    *   "Religious beliefs or theological debates",
    *   "Explicit or adult content"
@@ -414,11 +414,11 @@ export class SystemPromptBuilder {
    *
    * // Multiple calls accumulate restrictions
    * builder
-   *   .forbiddenTopics(["Medical advice"])
-   *   .forbiddenTopics(["Legal advice", "Tax planning"]);
+   *   .withForbiddenTopics(["Medical advice"])
+   *   .withForbiddenTopics(["Legal advice", "Tax planning"]);
    * ```
    */
-  forbiddenTopics(topics: string[]): this {
+  withForbiddenTopics(topics: string[]): this {
     this._forbiddenTopics.push(...topics.filter((t) => t));
     return this;
   }
@@ -453,7 +453,7 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * // Medical scheduling context
-   * builder.context(`
+   * builder.withContext(`
    *   Our clinic operates Monday-Friday, 9 AM to 5 PM.
    *   We have three doctors:
    *   - Dr. Smith specializes in general medicine
@@ -464,14 +464,14 @@ export class SystemPromptBuilder {
    * `);
    *
    * // E-commerce context
-   * builder.context(
+   * builder.withContext(
    *   "We offer free shipping on orders over $50. " +
    *   "Standard delivery takes 3-5 business days. " +
    *   "Returns are accepted within 30 days of purchase."
    * );
    *
    * // Financial services context
-   * builder.context(`
+   * builder.withContext(`
    *   Company policy:
    *   - All transactions require two-factor authentication
    *   - Daily withdrawal limit is $5,000
@@ -480,7 +480,7 @@ export class SystemPromptBuilder {
    * `);
    * ```
    */
-  context(text: string): this {
+  withContext(text: string): this {
     this._context = text;
     return this;
   }
@@ -511,7 +511,7 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * // Teaching proper tool usage
-   * builder.examples([
+   * builder.withExamples([
    *   {
    *     user: "What's the weather in Paris?",
    *     assistant: "I'll check the weather for you. *calls get_weather tool with location: Paris*",
@@ -525,7 +525,7 @@ export class SystemPromptBuilder {
    * ]);
    *
    * // Teaching response style
-   * builder.examples([
+   * builder.withExamples([
    *   {
    *     input: "Error: connection timeout",
    *     output: "I'm experiencing a connection issue. Let me try again in a moment.",
@@ -535,11 +535,11 @@ export class SystemPromptBuilder {
    *
    * // Multiple calls accumulate examples
    * builder
-   *   .examples([{ user: "Hello", assistant: "Hi! How can I help you today?" }])
-   *   .examples([{ user: "Thanks", assistant: "You're welcome! Let me know if you need anything else." }]);
+   *   .withExamples([{ user: "Hello", assistant: "Hi! How can I help you today?" }])
+   *   .withExamples([{ user: "Thanks", assistant: "You're welcome! Let me know if you need anything else." }]);
    * ```
    */
-  examples(examples: Example[]): this {
+  withExamples(examples: Example[]): this {
     // Filter out empty examples (those with no content)
     const validExamples = examples.filter(
       (ex) => ex.user || ex.assistant || ex.input || ex.output
@@ -578,13 +578,13 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * // Basic uncertainty handling
-   * builder.errorHandling(
+   * builder.withErrorHandling(
    *   "When uncertain about a response, acknowledge your uncertainty and ask " +
    *   "clarifying questions rather than guessing or making assumptions."
    * );
    *
    * // Comprehensive error handling
-   * builder.errorHandling(`
+   * builder.withErrorHandling(`
    *   Error Handling Guidelines:
    *   - If a request is ambiguous, ask specific clarifying questions
    *   - If you lack required information, explicitly list what's needed
@@ -594,15 +594,162 @@ export class SystemPromptBuilder {
    * `);
    *
    * // Domain-specific error handling
-   * builder.errorHandling(
+   * builder.withErrorHandling(
    *   "If appointment slots are unavailable, suggest 2-3 alternative times nearby. " +
    *   "If a doctor is not available, suggest alternative doctors with similar specialties. " +
    *   "Always explain why a request cannot be fulfilled."
    * );
    * ```
    */
-  errorHandling(instructions: string): this {
+  withErrorHandling(instructions: string): this {
     this._errorHandling = instructions;
+    return this;
+  }
+
+  /**
+   * Creates a new builder instance based on this one, allowing for variations
+   * or specializations without modifying the original.
+   *
+   * This method performs a deep copy of the current builder's state and returns
+   * a new independent instance. Changes to the extended builder won't affect
+   * the original, making it perfect for creating specialized versions of a base
+   * prompt configuration.
+   *
+   * @returns A new SystemPromptBuilder instance with copied state
+   *
+   * @example
+   * ```typescript
+   * // Create base support assistant
+   * const baseSupport = createPromptBuilder()
+   *   .withIdentity("You are a helpful support assistant")
+   *   .withCapabilities(["Answer questions", "Provide guidance"])
+   *   .withGuardrails()
+   *   .withTone("Professional and friendly");
+   *
+   * // Extend for technical support
+   * const technicalSupport = baseSupport.extend()
+   *   .withIdentity("You are a technical support specialist")
+   *   .withCapabilities(["Debug technical issues", "Explain technical concepts"])
+   *   .withContext("Product: SaaS Platform, Tech Stack: React + Node.js");
+   *
+   * // Original remains unchanged
+   * console.log(baseSupport.build()); // Still the base version
+   * console.log(technicalSupport.build()); // Extended version
+   * ```
+   */
+  extend(): SystemPromptBuilder {
+    const newBuilder = new SystemPromptBuilder();
+
+    // Copy all state (deep copy for arrays/objects)
+    newBuilder._identity = this._identity;
+    newBuilder._capabilities.push(...this._capabilities);
+    newBuilder._tools.push(...this._tools);
+    newBuilder._constraints.push(...this._constraints.map((c) => ({ ...c })));
+    newBuilder._outputFormat = this._outputFormat;
+    newBuilder._tone = this._tone;
+    newBuilder._guardrailsEnabled = this._guardrailsEnabled;
+    newBuilder._forbiddenTopics.push(...this._forbiddenTopics);
+    newBuilder._context = this._context;
+    newBuilder._examples.push(...this._examples.map((ex) => ({ ...ex })));
+    newBuilder._errorHandling = this._errorHandling;
+
+    return newBuilder;
+  }
+
+  /**
+   * Merges another builder's configuration into this one, allowing composition
+   * of different behavioral patterns and reusable prompt components.
+   *
+   * This method combines two builders following specific merge rules:
+   * - Identity: Uses this builder's identity (not overridden)
+   * - Capabilities: Combines both lists (removes duplicates)
+   * - Tools: Combines both lists (throws error if duplicate tool names)
+   * - Constraints: Combines both lists
+   * - Examples: Combines both lists
+   * - Context: Appends source context to this builder's context
+   * - Tone/Output/Error Handling: This builder's values take precedence (not overridden if set)
+   * - Guardrails: Enabled if either has it enabled
+   * - Forbidden Topics: Combines both lists (removes duplicates)
+   *
+   * @param source - The builder to merge into this one
+   * @returns This builder instance for method chaining
+   * @throws Error if duplicate tool names are detected
+   *
+   * @example
+   * ```typescript
+   * // Create reusable security patterns
+   * const securityBuilder = createPromptBuilder()
+   *   .withGuardrails()
+   *   .withConstraint("must", "Always verify user identity before sharing sensitive data")
+   *   .withConstraint("must_not", "Never log or store personal information")
+   *   .withForbiddenTopics(["Internal system details", "Other users' data"]);
+   *
+   * // Create domain-specific builder
+   * const customerService = createPromptBuilder()
+   *   .withIdentity("You are a customer service assistant")
+   *   .withCapabilities(["Process returns", "Track orders"])
+   *   .withTone("Empathetic and solution-oriented");
+   *
+   * // Merge security into customer service
+   * const secureCustomerService = customerService.merge(securityBuilder);
+   * // Now has both customer service features AND security constraints
+   * ```
+   */
+  merge(source: SystemPromptBuilder): this {
+    // Capabilities: combine and deduplicate
+    const newCapabilities = source._capabilities.filter(
+      (cap) => !this._capabilities.includes(cap)
+    );
+    this._capabilities.push(...newCapabilities);
+
+    // Tools: combine but check for duplicates
+    for (const tool of source._tools) {
+      const existingTool = this._tools.find((t) => t.name === tool.name);
+      if (existingTool) {
+        throw new Error(
+          `Cannot merge: duplicate tool name "${tool.name}". Tools with the same name must be unique.`
+        );
+      }
+      this._tools.push(tool);
+    }
+
+    // Constraints: combine all
+    this._constraints.push(...source._constraints.map((c) => ({ ...c })));
+
+    // Examples: combine all
+    this._examples.push(...source._examples.map((ex) => ({ ...ex })));
+
+    // Context: append source context
+    if (source._context) {
+      if (this._context) {
+        this._context += `\n\n${source._context}`;
+      } else {
+        this._context = source._context;
+      }
+    }
+
+    // Tone/Output/Error Handling: only use source if target doesn't have one
+    if (!this._tone && source._tone) {
+      this._tone = source._tone;
+    }
+    if (!this._outputFormat && source._outputFormat) {
+      this._outputFormat = source._outputFormat;
+    }
+    if (!this._errorHandling && source._errorHandling) {
+      this._errorHandling = source._errorHandling;
+    }
+
+    // Guardrails: enable if either has it
+    if (source._guardrailsEnabled) {
+      this._guardrailsEnabled = true;
+    }
+
+    // Forbidden Topics: combine and deduplicate
+    const newTopics = source._forbiddenTopics.filter(
+      (topic) => !this._forbiddenTopics.includes(topic)
+    );
+    this._forbiddenTopics.push(...newTopics);
+
     return this;
   }
 
@@ -618,8 +765,8 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * const builder = createPromptBuilder()
-   *   .tool({ name: "tool1", description: "...", schema: z.object({}) })
-   *   .tool({ name: "tool2", description: "...", schema: z.object({}), execute: async (...) => {...} });
+   *   .withTool({ name: "tool1", description: "...", schema: z.object({}) })
+   *   .withTool({ name: "tool2", description: "...", schema: z.object({}), execute: async (...) => {...} });
    *
    * const tools = builder.getTools();
    * console.log(tools.length); // 2
@@ -656,8 +803,8 @@ export class SystemPromptBuilder {
    * import { z } from 'zod';
    *
    * const builder = createPromptBuilder()
-   *   .identity("You are a helpful weather assistant")
-   *   .tool({
+   *   .withIdentity("You are a helpful weather assistant")
+   *   .withTool({
    *     name: "get_weather",
    *     description: "Get current weather for a location",
    *     schema: z.object({
@@ -668,7 +815,7 @@ export class SystemPromptBuilder {
    *       return response.json();
    *     }
    *   })
-   *   .tool({
+   *   .withTool({
    *     name: "get_forecast",
    *     description: "Get 5-day forecast",
    *     schema: z.object({
@@ -740,9 +887,9 @@ export class SystemPromptBuilder {
    * import { z } from 'zod';
    *
    * const builder = createPromptBuilder()
-   *   .identity("You are a helpful weather assistant")
-   *   .capabilities(["Provide weather information", "Give forecasts"])
-   *   .tool({
+   *   .withIdentity("You are a helpful weather assistant")
+   *   .withCapabilities(["Provide weather information", "Give forecasts"])
+   *   .withTool({
    *     name: "get_weather",
    *     description: "Get current weather for a location",
    *     schema: z.object({
@@ -753,7 +900,7 @@ export class SystemPromptBuilder {
    *       return response.json();
    *     }
    *   })
-   *   .constraint("must", "Always verify location exists before providing weather")
+   *   .withConstraint("must", "Always verify location exists before providing weather")
    *   .withTone("Be friendly and helpful");
    *
    * // Ultra clean usage with spread operator
@@ -847,8 +994,8 @@ export class SystemPromptBuilder {
    * @example
    * ```typescript
    * const prompt = createPromptBuilder()
-   *   .identity("You are a helpful assistant")
-   *   .capability("Answer questions")
+   *   .withIdentity("You are a helpful assistant")
+   *   .withCapability("Answer questions")
    *   .build();
    *
    * console.log(prompt);
@@ -1096,11 +1243,20 @@ export class SystemPromptBuilder {
  *
  * // Start chaining methods
  * const prompt = builder
- *   .identity("You are a helpful assistant")
- *   .capability("Answer questions")
+ *   .withIdentity("You are a helpful assistant")
+ *   .withCapability("Answer questions")
  *   .build();
  * ```
  */
 export function createPromptBuilder(): SystemPromptBuilder {
   return new SystemPromptBuilder();
 }
+
+export type {
+  AiSdkConfig,
+  Constraint,
+  ConstraintType,
+  Example,
+  ExecutableToolDefinition,
+  ToolDefinition,
+} from "./types";

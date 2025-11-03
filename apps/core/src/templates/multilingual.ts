@@ -1,5 +1,5 @@
-import type { SystemPromptBuilder } from "@/builder";
-import { createPromptBuilder } from "@/builder";
+import type { SystemPromptBuilder } from "../builder";
+import { createPromptBuilder } from "../builder";
 
 /**
  * Configuration options for the multilingual template.

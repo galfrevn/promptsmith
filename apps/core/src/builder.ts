@@ -1,11 +1,11 @@
-import { parseZodSchema } from "@/schemas";
+import { parseZodSchema } from "./schemas";
 import type {
   AiSdkConfig,
   Constraint,
   ConstraintType,
   Example,
   ExecutableToolDefinition,
-} from "@/types";
+} from "./types";
 
 /**
  * Builder class for constructing type-safe system prompts for AI agents.

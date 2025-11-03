@@ -1,5 +1,5 @@
-import type { SystemPromptBuilder } from "@/builder";
-import { createPromptBuilder } from "@/builder";
+import type { SystemPromptBuilder } from "../builder";
+import { createPromptBuilder } from "../builder";
 
 /**
  * Creates a reusable security template for composition with other prompts.

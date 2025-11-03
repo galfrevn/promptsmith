@@ -1,13 +1,13 @@
 import { generateObject, generateText } from "ai";
 import { z } from "zod";
 
-import type { SystemPromptBuilder } from "@/builder";
+import type { SystemPromptBuilder } from "./builder";
 import type {
   TestCase,
   TestCaseResult,
   TestOptions,
   TestResult,
-} from "@/types";
+} from "./types";
 
 /**
  * Constants for scoring

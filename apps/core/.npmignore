@@ -1,0 +1,22 @@
+# Source files
+src/
+__tests__/
+*.test.ts
+
+# Config files
+tsconfig.json
+tsconfig.build.json
+
+# Build scripts
+scripts/
+
+# Source maps
+*.map
+*.d.ts.map
+
+# Development files
+.DS_Store
+*.log
+.env
+.env.*
+

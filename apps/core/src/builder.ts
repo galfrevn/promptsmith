@@ -631,6 +631,17 @@ export class SystemPromptBuilder {
    * - `compact`: Minimal whitespace variant of markdown. Removes excessive
    *   whitespace while maintaining markdown structure.
    *
+   * **Format selection tips:**
+   * - Start with `markdown` while authoring or debugging prompts so teammates
+   *   can read and diff the content easily.
+   * - Promote to `compact` in QA/staging when you still want Markdown
+   *   semantics but need to trim 10–20% of token usage.
+   * - Switch to `toon` for production workloads with high traffic or large
+   *   guardrails/examples where 30–60% token savings meaningfully lower cost.
+   *   The [official TOON docs](https://github.com/toon-format/toon#readme)
+   *   cover the full spec, benchmarks, and advanced usage guidance if you need
+   *   to dive deeper.
+   *
    * The format you set here will be used by both `.build()` and `.toAiSdk()`.
    * You can also override it temporarily by passing a format parameter to `.build()`.
    *

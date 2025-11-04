@@ -723,9 +723,11 @@ builder.withOutput(`
 
 Sets the output format for the generated prompt. Available formats:
 
-- `"markdown"` (default): Standard markdown with headers and formatting
-- `"toon"`: TOON format (Token-Oriented Object Notation) - optimized for token efficiency (30-60% reduction)
-- `"compact"`: Minimal whitespace variant of markdown
+| Format | Reach for it when… | Why it helps |
+| --- | --- | --- |
+| `"markdown"` (default) | You're authoring or debugging and need fully readable sections for teammates and docs. | Full Markdown fidelity preserves headings and spacing, making it easy to review and diff. |
+| `"toon"` | You're preparing production prompts where token budget matters (long guardrails, tabular examples, high-volume traffic). | TOON strips redundant syntax and tabularizes arrays, commonly saving 30–60% of tokens. Explore the [official docs](https://github.com/toon-format/toon#readme) for the spec, benchmarks, and deeper usage tips. |
+| `"compact"` | You want Markdown semantics but need smaller payloads for staging, QA, or providers that key off Markdown structure. | Compact mode removes extra whitespace for ~10–20% savings while staying human-friendly. |
 
 The format applies to both `.build()` and `.toAiSdk()` output.
 
@@ -739,6 +741,9 @@ builder.withFormat("markdown");
 // Use compact for moderate savings
 builder.withFormat("compact");
 ```
+
+> [!TIP]
+> Start with Markdown while designing prompts, promote to Compact for internal review environments, and ship TOON in production to minimize runtime token costs. Override per-call with `builder.build("format")` when you need a one-off. For full details, benchmarks, and guidance, review the [official TOON documentation](https://github.com/toon-format/toon#readme).
 
 **Token Savings Example:**
 

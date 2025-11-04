@@ -511,7 +511,7 @@ PromptSmith supports multiple output formats to optimize your prompts for differ
 ### Format Options
 
 - **`markdown`** (default): Standard markdown format with headers and formatting. Most human-readable, ideal for debugging and documentation.
-- **`toon`**: TOON format optimized for token efficiency. Uses indentation-based structure and eliminates redundant syntax.
+- **`toon`**: TOON format optimized for token efficiency. Uses indentation-based structure and eliminates redundant syntax. Dive deeper in the [official TOON docs](https://github.com/toon-format/toon#readme) for the spec, benchmarks, and advanced guidance.
 - **`compact`**: Minimal whitespace variant of markdown. Removes excessive whitespace while maintaining structure.
 
 ### Using withFormat()
@@ -704,9 +704,14 @@ const config = builder.toAiSdk(); // Uses TOON format
 
 ### When to Use Each Format
 
-- **Markdown**: Development, debugging, documentation, or when human readability is priority
-- **TOON**: Production environments with high API volume to minimize token costs
-- **Compact**: When you need moderate savings but want to maintain markdown compatibility
+| Format | Reach for it when… | Why it helps |
+| --- | --- | --- |
+| **`markdown`** | You're iterating on prompts locally, pasting into docs, or sharing with teammates who need to skim/edit the content. | It keeps headings, lists, and spacing exactly as written, making diffs, reviews, and debugging straightforward. |
+| **`toon`** | You're preparing production-grade prompts where token cost matters (batch jobs, agents with large guardrails/examples, or any uniform tabular data). | TOON removes redundant syntax and encodes arrays compactly, often cutting 30–60% of tokens without sacrificing structure for the model. See the [official docs](https://github.com/toon-format/toon#readme) for format details, benchmarks, and implementation notes. |
+| **`compact`** | You still want Markdown semantics (headings, numbered lists) but need a cheaper payload for staging/tests or providers that favor Markdown hints. | Compact mode trims whitespace, collapses blank lines, and keeps the document readable for humans while saving ~10–20% of tokens. |
+
+> [!TIP]
+> A good heuristic is **markdown for authoring**, **compact for QA/staging**, and **TOON for production traffic**. Switch formats with `builder.withFormat(...)` or pass the desired format to `.build()` when you need a one-off override. For deeper rules, examples, and benchmarks, refer to the [official TOON documentation](https://github.com/toon-format/toon#readme).
 
 ### Cost Impact Example
 

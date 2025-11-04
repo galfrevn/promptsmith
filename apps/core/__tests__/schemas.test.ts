@@ -3,6 +3,7 @@
 /** biome-ignore-all lint/style/noMagicNumbers: Magic number is acceptable for this test */
 
 import { describe, expect, test } from "bun:test";
+
 import { z } from "zod";
 import { getZodTypeName, parseZodSchema } from "@/schemas";
 

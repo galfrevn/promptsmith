@@ -139,6 +139,21 @@ export interface ExecutableToolDefinition<T extends z.ZodType = z.ZodType>
 export type ConstraintType = "must" | "must_not" | "should" | "should_not";
 
 /**
+ * Output format for the generated prompt.
+ *
+ * - `markdown`: Standard markdown format (default, human-readable with headers and formatting)
+ * - `toon`: TOON format (Token-Oriented Object Notation) - optimized format that reduces tokens by 30-60%
+ * - `compact`: Minimal whitespace variant of markdown, optimized for token usage
+ *
+ * @example
+ * ```typescript
+ * builder.withFormat('toon'); // Use TOON format for token optimization
+ * builder.withFormat('markdown'); // Use standard markdown (default)
+ * ```
+ */
+export type PromptFormat = "markdown" | "toon" | "compact";
+
+/**
  * A behavioral constraint or guideline for the AI agent.
  *
  * Constraints define rules that govern the agent's behavior. They are organized

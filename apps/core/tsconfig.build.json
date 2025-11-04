@@ -4,7 +4,8 @@
     "declaration": true,
     "declarationMap": false,
     "sourceMap": false,
-    "removeComments": true
+    "removeComments": true,
+    "rootDir": "./src"
   },
   "exclude": ["node_modules", "dist", "examples", "tests", "**/*.test.ts"]
 }

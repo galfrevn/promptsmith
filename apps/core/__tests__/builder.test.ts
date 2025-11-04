@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/style/noMagicNumbers: Magic number is acceptable for this test */
+/** biome-ignore-all lint/performance/useTopLevelRegex: Performance is not a concern for this test */
+/** biome-ignore-all lint/nursery/noShadow: Shadowing is acceptable for this test */
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
@@ -2061,6 +2063,396 @@ Line 3: Final notes`;
         expect(mockAiSdkParams.model).toBe("test-model");
         expect(mockAiSdkParams.prompt).toBe("Test prompt");
       });
+    });
+  });
+
+  describe("Format Selection", () => {
+    let builder: SystemPromptBuilder;
+
+    beforeEach(() => {
+      builder = createPromptBuilder()
+        .withIdentity("You are a helpful assistant")
+        .withCapability("Answer questions")
+        .withCapability("Provide help");
+    });
+
+    test("withFormat() sets format correctly", () => {
+      const toonBuilder = builder.withFormat("toon");
+      const config = toonBuilder.toJSON() as { format: string };
+      expect(config.format).toBe("toon");
+    });
+
+    test("build() uses configured format by default", () => {
+      const markdownPrompt = builder.withFormat("markdown").build();
+      const toonPrompt = builder.withFormat("toon").build();
+      const compactPrompt = builder.withFormat("compact").build();
+
+      expect(markdownPrompt).toContain("# Identity");
+      expect(markdownPrompt).toContain("# Capabilities");
+
+      expect(toonPrompt).not.toContain("# Identity");
+      expect(toonPrompt).toContain("Identity:");
+      expect(toonPrompt).toContain("Capabilities[2]:");
+
+      expect(compactPrompt).toContain("# Identity");
+      expect(compactPrompt).toContain("# Capabilities");
+    });
+
+    test("build(format) overrides configured format", () => {
+      const toonBuilder = builder.withFormat("toon");
+
+      const markdownPrompt = toonBuilder.build("markdown");
+      expect(markdownPrompt).toContain("# Identity");
+
+      const compactPrompt = toonBuilder.build("compact");
+      expect(compactPrompt).toContain("# Identity");
+
+      const defaultPrompt = toonBuilder.build();
+      expect(defaultPrompt).toContain("Identity:");
+      expect(defaultPrompt).not.toContain("# Identity");
+    });
+
+    test("TOON format works correctly for simple prompts", () => {
+      const toonPrompt = builder.extend().withFormat("toon").build();
+      const markdownPrompt = builder.extend().withFormat("markdown").build();
+
+      expect(toonPrompt).toContain("helpful assistant");
+      expect(toonPrompt).toContain("Answer questions");
+      expect(toonPrompt).toContain("Provide help");
+
+      expect(toonPrompt).toContain("Identity:");
+      expect(toonPrompt).toContain("Capabilities[2]:");
+      expect(toonPrompt).not.toContain("# Identity");
+
+      expect(markdownPrompt).toContain("# Identity");
+      expect(markdownPrompt).toContain("# Capabilities");
+    });
+
+    test("compact format removes excessive whitespace", () => {
+      const testBuilder = createPromptBuilder()
+        .withIdentity("Test identity")
+        .withCapability("Test capability")
+        .withContext("Test context");
+
+      const compactPrompt = testBuilder.extend().withFormat("compact").build();
+
+      expect(compactPrompt).not.toMatch(/\n{3,}/);
+
+      expect(compactPrompt).toContain("# Identity");
+      expect(compactPrompt).toContain("# Context");
+    });
+
+    test("toAiSdk() uses configured format", () => {
+      const markdownBuilder = builder.extend().withFormat("markdown");
+      const toonBuilder = builder.extend().withFormat("toon");
+
+      const markdownConfig = markdownBuilder.toAiSdk();
+      const toonConfig = toonBuilder.toAiSdk();
+
+      expect(markdownConfig.system).toContain("# Identity");
+      expect(toonConfig.system).toContain("Identity:");
+      expect(toonConfig.system).not.toContain("# Identity");
+    });
+
+    test("format is copied in extend()", () => {
+      const baseBuilder = builder.withFormat("toon");
+      const extendedBuilder = baseBuilder.extend();
+
+      const config = extendedBuilder.toJSON() as { format: string };
+      expect(config.format).toBe("toon");
+
+      const prompt = extendedBuilder.build();
+      expect(prompt).toContain("Identity:");
+      expect(prompt).not.toContain("# Identity");
+    });
+
+    test("format is included in toJSON()", () => {
+      const markdownConfig = builder.withFormat("markdown").toJSON() as {
+        format: string;
+      };
+      const toonConfig = builder.withFormat("toon").toJSON() as {
+        format: string;
+      };
+      const compactConfig = builder.withFormat("compact").toJSON() as {
+        format: string;
+      };
+
+      expect(markdownConfig.format).toBe("markdown");
+      expect(toonConfig.format).toBe("toon");
+      expect(compactConfig.format).toBe("compact");
+    });
+
+    test("default format is markdown", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+      const config = builder.toJSON() as { format: string };
+      expect(config.format).toBe("markdown");
+
+      const prompt = builder.build();
+      expect(prompt).toContain("# Identity");
+    });
+  });
+
+  describe("Merge", () => {
+    test("merges capabilities and deduplicates", () => {
+      const base = createPromptBuilder()
+        .withCapability("Capability A")
+        .withCapability("Capability B");
+
+      const source = createPromptBuilder()
+        .withCapability("Capability B")
+        .withCapability("Capability C");
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Capability A");
+      expect(prompt).toContain("Capability B");
+      expect(prompt).toContain("Capability C");
+      expect(prompt.match(/Capability B/g)?.length).toBe(1);
+    });
+
+    test("merges tools and throws on duplicate names", () => {
+      const base = createPromptBuilder().withTool({
+        name: "tool1",
+        description: "First tool",
+        schema: z.object({ param: z.string() }),
+      });
+
+      const source = createPromptBuilder().withTool({
+        name: "tool2",
+        description: "Second tool",
+        schema: z.object({ param: z.string() }),
+      });
+
+      base.merge(source);
+      const tools = base.getTools();
+      expect(tools.length).toBe(2);
+      expect(tools.map((t) => t.name)).toEqual(["tool1", "tool2"]);
+    });
+
+    test("throws error when merging tools with duplicate names", () => {
+      const base = createPromptBuilder().withTool({
+        name: "sameTool",
+        description: "First version",
+        schema: z.object({ param: z.string() }),
+      });
+
+      const source = createPromptBuilder().withTool({
+        name: "sameTool",
+        description: "Second version",
+        schema: z.object({ param: z.string() }),
+      });
+
+      expect(() => base.merge(source)).toThrow(
+        'Cannot merge: duplicate tool name "sameTool"'
+      );
+    });
+
+    test("merges constraints", () => {
+      const base = createPromptBuilder()
+        .withConstraint("must", "Base must rule")
+        .withConstraint("must_not", "Base must not rule");
+
+      const source = createPromptBuilder()
+        .withConstraint("should", "Source should rule")
+        .withConstraint("must", "Source must rule");
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Base must rule");
+      expect(prompt).toContain("Base must not rule");
+      expect(prompt).toContain("Source should rule");
+      expect(prompt).toContain("Source must rule");
+    });
+
+    test("merges examples", () => {
+      const base = createPromptBuilder().withExamples([
+        { user: "Hello", assistant: "Hi", explanation: "Greeting" },
+      ]);
+
+      const source = createPromptBuilder().withExamples([
+        { user: "Bye", assistant: "Goodbye", explanation: "Farewell" },
+      ]);
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Hello");
+      expect(prompt).toContain("Hi");
+      expect(prompt).toContain("Bye");
+      expect(prompt).toContain("Goodbye");
+    });
+
+    test("appends context from source", () => {
+      const base = createPromptBuilder().withContext("Base context");
+      const source = createPromptBuilder().withContext("Source context");
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Base context");
+      expect(prompt).toContain("Source context");
+    });
+
+    test("sets context from source if base has none", () => {
+      const base = createPromptBuilder().withIdentity("Test identity");
+      const source = createPromptBuilder().withContext("Source context");
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Source context");
+    });
+
+    test("keeps base tone if set, otherwise uses source", () => {
+      const baseWithTone = createPromptBuilder().withTone("Base tone");
+      const source1 = createPromptBuilder().withTone("Source tone");
+
+      baseWithTone.merge(source1);
+      let prompt = baseWithTone.build();
+      expect(prompt).toContain("Base tone");
+      expect(prompt).not.toContain("Source tone");
+
+      const baseWithoutTone = createPromptBuilder().withIdentity("Test");
+      const source2 = createPromptBuilder().withTone("Source tone");
+
+      baseWithoutTone.merge(source2);
+      prompt = baseWithoutTone.build();
+      expect(prompt).toContain("Source tone");
+    });
+
+    test("keeps base output format if set, otherwise uses source", () => {
+      const baseWithOutput = createPromptBuilder().withOutput("Base output");
+      const source1 = createPromptBuilder().withOutput("Source output");
+
+      baseWithOutput.merge(source1);
+      let prompt = baseWithOutput.build();
+      expect(prompt).toContain("Base output");
+      expect(prompt).not.toContain("Source output");
+
+      const baseWithoutOutput = createPromptBuilder().withIdentity("Test");
+      const source2 = createPromptBuilder().withOutput("Source output");
+
+      baseWithoutOutput.merge(source2);
+      prompt = baseWithoutOutput.build();
+      expect(prompt).toContain("Source output");
+    });
+
+    test("keeps base error handling if set, otherwise uses source", () => {
+      const baseWithError =
+        createPromptBuilder().withErrorHandling("Base error");
+      const source1 = createPromptBuilder().withErrorHandling("Source error");
+
+      baseWithError.merge(source1);
+      let prompt = baseWithError.build();
+      expect(prompt).toContain("Base error");
+      expect(prompt).not.toContain("Source error");
+
+      const baseWithoutError = createPromptBuilder().withIdentity("Test");
+      const source2 = createPromptBuilder().withErrorHandling("Source error");
+
+      baseWithoutError.merge(source2);
+      prompt = baseWithoutError.build();
+      expect(prompt).toContain("Source error");
+    });
+
+    test("enables guardrails if either builder has them", () => {
+      const base1 = createPromptBuilder().withGuardrails();
+      const source1 = createPromptBuilder().withIdentity("Test");
+
+      base1.merge(source1);
+      let prompt = base1.build();
+      expect(prompt).toContain("Guardrails");
+
+      const base2 = createPromptBuilder().withIdentity("Test");
+      const source2 = createPromptBuilder().withGuardrails();
+
+      base2.merge(source2);
+      prompt = base2.build();
+      expect(prompt).toContain("Guardrails");
+    });
+
+    test("merges forbidden topics and deduplicates", () => {
+      const base = createPromptBuilder().withForbiddenTopics([
+        "Topic A",
+        "Topic B",
+      ]);
+
+      const source = createPromptBuilder().withForbiddenTopics([
+        "Topic B",
+        "Topic C",
+      ]);
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Topic A");
+      expect(prompt).toContain("Topic B");
+      expect(prompt).toContain("Topic C");
+      expect(prompt.match(/Topic B/g)?.length).toBe(1);
+    });
+
+    test("merge returns this for chaining", () => {
+      const base = createPromptBuilder();
+      const source = createPromptBuilder().withIdentity("Test");
+
+      const result = base.merge(source);
+      expect(result).toBe(base);
+    });
+
+    test("merge does not copy format property", () => {
+      const base = createPromptBuilder()
+        .withIdentity("Base")
+        .withFormat("markdown");
+
+      const source = createPromptBuilder()
+        .withIdentity("Source")
+        .withFormat("toon");
+
+      base.merge(source);
+
+      const config = base.toJSON() as { format: string };
+      expect(config.format).toBe("markdown");
+    });
+
+    test("complex merge scenario with multiple features", () => {
+      const base = createPromptBuilder()
+        .withIdentity("Base agent")
+        .withCapability("Base capability")
+        .withTone("Base tone")
+        .withConstraint("must", "Base rule")
+        .withFormat("markdown");
+
+      const source = createPromptBuilder()
+        .withCapability("Source capability")
+        .withCapability("Base capability")
+        .withTool({
+          name: "sourceTool",
+          description: "A source tool",
+          schema: z.object({ param: z.string() }),
+        })
+        .withConstraint("should", "Source rule")
+        .withGuardrails()
+        .withForbiddenTopics(["Restricted topic"])
+        .withFormat("toon");
+
+      base.merge(source);
+      const prompt = base.build();
+
+      expect(prompt).toContain("Base agent");
+      expect(prompt).toContain("Base capability");
+      expect(prompt).toContain("Source capability");
+      expect(prompt.match(/Base capability/g)?.length).toBe(1);
+      expect(prompt).toContain("sourceTool");
+      expect(prompt).toContain("Base rule");
+      expect(prompt).toContain("Source rule");
+      expect(prompt).toContain("Base tone");
+      expect(prompt).toContain("Guardrails");
+      expect(prompt).toContain("Restricted topic");
+
+      const config = base.toJSON() as { format: string };
+      expect(config.format).toBe("markdown");
     });
   });
 });

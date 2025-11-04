@@ -4,7 +4,7 @@
 
 **Stop wrestling with prompt strings. Start building AI agents that actually work.**
 
-*Type-safe system prompt builder designed for production AI applications with the Vercel AI SDK*
+_Type-safe system prompt builder designed for production AI applications with the Vercel AI SDK_
 
 [![npm version](https://img.shields.io/npm/v/promptsmith-ts.svg)](https://www.npmjs.com/package/promptsmith-ts)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -58,21 +58,27 @@ const response = await generateText({
 ## Why PromptSmith?
 
 ### ✅ **Type-Safe Tools**
+
 No more runtime errors from mismatched tool schemas. Zod schemas give you autocomplete and type checking.
 
 ### 🛡️ **Security Built-In**
+
 One-line guardrails against prompt injection. Forbidden topics enforcement. Error handling patterns.
 
 ### 🧩 **Composable & Reusable**
+
 Create base prompts and extend them. Merge security patterns across agents. DRY up your AI code.
 
 ### 🔗 **AI SDK Native**
+
 `.toAiSdk()` exports ready-to-use configurations. Built for `generateText`, `streamText`, and `generateObject`.
 
 ### 🧪 **Test Your Prompts**
+
 Built-in testing framework. Run real LLM tests against your prompts before production.
 
 ### 📦 **Production-Ready Templates**
+
 Start fast with pre-built templates for customer service, coding assistants, data analysis, and more.
 
 ## Installation
@@ -82,24 +88,30 @@ npm install promptsmith-ts zod ai
 ```
 
 **Peer Dependencies:**
+
 - `zod` - Schema validation and type inference
 - `ai` - Vercel AI SDK for LLM integration
 
 ## Use Cases
 
 ### 🛍️ **E-Commerce Customer Support**
+
 Build agents that search products, handle returns, and answer questions—with built-in safety guardrails.
 
 ### 💻 **Code Review & Generation**
+
 Create coding assistants with access to your codebase, documentation, and testing tools.
 
 ### 📊 **Data Analysis Agents**
+
 Query databases, generate reports, and visualize data with natural language interfaces.
 
 ### 📚 **Research & Documentation**
+
 Build agents that search knowledge bases, summarize documents, and answer domain-specific questions.
 
 ### 🔐 **Secure Internal Tools**
+
 Enterprise agents with strict access controls, audit logging, and compliance requirements.
 
 ## Quick Start with AI SDK
@@ -283,11 +295,13 @@ import { z } from "zod";
 
 const supportAgent = createPromptBuilder()
   .withIdentity("You are TechStore's customer service assistant")
-  .withContext(`
+  .withContext(
+    `
     Store Hours: Mon-Fri 9AM-6PM EST
     Return Policy: 30 days with receipt
     Free shipping on orders over $50
-  `)
+  `
+  )
   .withCapabilities([
     "Search products and check inventory",
     "Track orders and shipments",
@@ -321,8 +335,14 @@ const supportAgent = createPromptBuilder()
       return order;
     },
   })
-  .withConstraint("must", "Always verify order number before processing returns")
-  .withConstraint("must_not", "Never offer discounts beyond 10% without manager approval")
+  .withConstraint(
+    "must",
+    "Always verify order number before processing returns"
+  )
+  .withConstraint(
+    "must_not",
+    "Never offer discounts beyond 10% without manager approval"
+  )
   .withGuardrails()
   .withTone("Friendly, professional, and helpful");
 
@@ -506,11 +526,7 @@ import type {
   AiSdkConfig,
 } from "promptsmith-ts/builder";
 
-import type {
-  TestCase,
-  TestOptions,
-  TestResult,
-} from "promptsmith-ts/tester";
+import type { TestCase, TestOptions, TestResult } from "promptsmith-ts/tester";
 ```
 
 ## API Reference
@@ -703,14 +719,66 @@ builder.withOutput(`
 `);
 ```
 
-### Output Methods
+#### `withFormat(format: PromptFormat): this`
 
-#### `build(): string`
+Sets the output format for the generated prompt. Available formats:
 
-Generates and returns the complete system prompt as a markdown string. Only sections with content are included.
+- `"markdown"` (default): Standard markdown with headers and formatting
+- `"toon"`: TOON format (Token-Oriented Object Notation) - optimized for token efficiency (30-60% reduction)
+- `"compact"`: Minimal whitespace variant of markdown
+
+The format applies to both `.build()` and `.toAiSdk()` output.
 
 ```typescript
+// Use TOON format for production to save tokens
+builder.withFormat("toon");
+
+// Use markdown for development/debugging
+builder.withFormat("markdown");
+
+// Use compact for moderate savings
+builder.withFormat("compact");
+```
+
+**Token Savings Example:**
+
+```typescript
+const complexBuilder = createPromptBuilder()
+  .withIdentity("Customer service agent")
+  .withCapabilities(["Answer questions", "Process returns"])
+  .withTool({ name: "search", description: "Search", schema: z.object({...}) })
+  .withConstraint("must", "Be helpful");
+
+const markdownPrompt = complexBuilder.extend().withFormat("markdown").build();
+const toonPrompt = complexBuilder.extend().withFormat("toon").build();
+
+// TOON format typically 30-60% smaller for complex prompts
+console.log(`Markdown: ${markdownPrompt.length} chars`);
+console.log(`TOON: ${toonPrompt.length} chars`);
+```
+
+### Output Methods
+
+#### `build(format?: PromptFormat): string`
+
+Generates and returns the complete system prompt as a string. Only sections with content are included.
+
+The optional `format` parameter can temporarily override the format set via `withFormat()`:
+
+- If no format is specified, uses the format set via `withFormat()` (defaults to `"markdown"`)
+- Pass a format to temporarily override the configured format
+
+```typescript
+// Use the configured format (markdown by default)
 const prompt = builder.build();
+
+// Override format temporarily
+const toonPrompt = builder.build("toon");
+const compactPrompt = builder.build("compact");
+
+// Set default format via withFormat()
+const toonBuilder = builder.withFormat("toon");
+const prompt = toonBuilder.build(); // Uses TOON format
 ```
 
 #### `toAiSdk(): AiSdkConfig`
@@ -873,13 +941,15 @@ function createUserAgent(userId: string, preferences: UserPreferences) {
 
   return createPromptBuilder()
     .withIdentity("You are a personalized shopping assistant")
-    .withContext(`
+    .withContext(
+      `
       User Profile:
       - Name: ${user.name}
       - Preferences: ${preferences.categories.join(", ")}
       - Budget Range: $${preferences.minBudget}-$${preferences.maxBudget}
       - Previous Purchases: ${user.orderHistory.length} orders
-    `)
+    `
+    )
     .withCapabilities(["Recommend products", "Compare options"])
     .withTone("Personalized and friendly");
 }
@@ -938,7 +1008,8 @@ const agent = createPromptBuilder()
   .withExamples([
     {
       user: "Find papers on quantum computing and save the most relevant one",
-      assistant: "I'll search for papers, summarize the top result, and save it for you.",
+      assistant:
+        "I'll search for papers, summarize the top result, and save it for you.",
       explanation: "Demonstrates multi-step tool usage",
     },
   ]);
@@ -1077,11 +1148,7 @@ import { openai } from "@ai-sdk/openai";
 
 const agent = createPromptBuilder()
   .withIdentity("You are a customer service agent for TechStore")
-  .withCapabilities([
-    "Search products",
-    "Track orders",
-    "Process returns",
-  ])
+  .withCapabilities(["Search products", "Track orders", "Process returns"])
   .withTool({
     name: "search_products",
     description: "Search product catalog",
@@ -1106,30 +1173,33 @@ const result = await generateText({
 
 ### The Difference
 
-| Feature | Manual Prompts | PromptSmith |
-|---------|---------------|-------------|
-| **Type Safety** | ❌ None | ✅ Full TypeScript support |
-| **Tool Integration** | ❌ Manual sync | ✅ Automatic from schemas |
-| **Reusability** | ❌ Copy-paste | ✅ Compose & extend |
-| **Security** | ❌ DIY | ✅ Built-in guardrails |
-| **Testing** | ❌ Manual | ✅ Automated framework |
-| **Maintainability** | ❌ 500-line strings | ✅ Structured & organized |
-| **AI SDK Integration** | ❌ Manual config | ✅ `.toAiSdk()` |
+| Feature                | Manual Prompts      | PromptSmith                |
+| ---------------------- | ------------------- | -------------------------- |
+| **Type Safety**        | ❌ None             | ✅ Full TypeScript support |
+| **Tool Integration**   | ❌ Manual sync      | ✅ Automatic from schemas  |
+| **Reusability**        | ❌ Copy-paste       | ✅ Compose & extend        |
+| **Security**           | ❌ DIY              | ✅ Built-in guardrails     |
+| **Testing**            | ❌ Manual           | ✅ Automated framework     |
+| **Maintainability**    | ❌ 500-line strings | ✅ Structured & organized  |
+| **AI SDK Integration** | ❌ Manual config    | ✅ `.toAiSdk()`            |
 
 ## What's Next?
 
 ### 📚 **Learn More**
+
 - Explore all [templates](./src/templates) for ready-to-use agents
 - Read the complete [API Reference](#api-reference) above
 - Check out [real-world examples](#real-world-examples-with-ai-sdk)
 
 ### 🚀 **Get Started**
+
 1. Install: `npm install promptsmith-ts zod ai`
 2. Pick a [template](#quick-start-with-ai-sdk) or start from scratch
 3. Test with the [testing framework](#test-your-agents-before-deploy)
 4. Deploy to production
 
 ### 💡 **Best Practices**
+
 - **Start with templates** - Pre-configured for common use cases
 - **Add guardrails** - Use `.withGuardrails()` for security
 - **Test before deploy** - Run automated tests with real LLMs
@@ -1137,6 +1207,7 @@ const result = await generateText({
 - **Use TypeScript** - Get full type safety and autocomplete
 
 ### 🤝 **Join the Community**
+
 - ⭐ [Star on GitHub](https://github.com/galfrevn/promptsmith)
 - 💬 [Join Discussions](https://github.com/galfrevn/promptsmith/discussions)
 - 🐛 [Report Issues](https://github.com/galfrevn/promptsmith/issues)

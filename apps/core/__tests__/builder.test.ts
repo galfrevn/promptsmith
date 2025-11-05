@@ -2455,4 +2455,620 @@ Line 3: Final notes`;
       expect(config.format).toBe("markdown");
     });
   });
+
+  describe("Cache Integration", () => {
+    test("build() uses cache on repeated calls", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test agent")
+        .withCapability("Test capability");
+
+      const first = builder.build();
+      const second = builder.build();
+
+      expect(first).toBe(second);
+      expect(first).toContain("Test agent");
+    });
+
+    test("cache invalidates when identity changes", () => {
+      const builder = createPromptBuilder().withIdentity("First");
+
+      const first = builder.build();
+      builder.withIdentity("Second");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+      expect(first).toContain("First");
+      expect(second).toContain("Second");
+    });
+
+    test("cache invalidates when capabilities change", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test")
+        .withCapability("First");
+
+      const first = builder.build();
+      builder.withCapability("Second");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when tools are added", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withTool({
+        name: "test",
+        description: "Test tool",
+        schema: z.object({ q: z.string() }),
+      });
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when constraints change", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withConstraint("must", "Be helpful");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache works with different formats", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const markdown1 = builder.build("markdown");
+      const toon1 = builder.build("toon");
+      const markdown2 = builder.build("markdown");
+      const toon2 = builder.build("toon");
+
+      expect(markdown1).toBe(markdown2);
+      expect(toon1).toBe(toon2);
+      expect(markdown1).not.toBe(toon1);
+    });
+
+    test("cache invalidates when format changes via withFormat", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test")
+        .withFormat("markdown");
+
+      const first = builder.build();
+      builder.withFormat("toon");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when tone changes", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withTone("Friendly");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when output format changes", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withOutput("JSON format");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when guardrails enabled", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withGuardrails();
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when forbidden topics added", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withForbiddenTopics(["Medical advice"]);
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when context changes", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withContext("New context");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when examples added", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withExamples([{ user: "Hello", assistant: "Hi" }]);
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+
+    test("cache invalidates when error handling changes", () => {
+      const builder = createPromptBuilder().withIdentity("Test");
+
+      const first = builder.build();
+      builder.withErrorHandling("Handle errors gracefully");
+      const second = builder.build();
+
+      expect(first).not.toBe(second);
+    });
+  });
+
+  describe("Conditional Methods", () => {
+    describe("withConstraintIf()", () => {
+      test("adds constraint when condition is true", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraintIf(true, "must", "Be helpful");
+
+        const prompt = builder.build();
+        expect(prompt).toContain("Be helpful");
+      });
+
+      test("does not add constraint when condition is false", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraintIf(false, "must", "Be helpful");
+
+        const prompt = builder.build();
+        expect(prompt).not.toContain("Be helpful");
+      });
+
+      test("works with different constraint types", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraintIf(true, "must", "Do this")
+          .withConstraintIf(true, "must_not", "Don't do this")
+          .withConstraintIf(true, "should", "Should do this")
+          .withConstraintIf(true, "should_not", "Should not do this");
+
+        const prompt = builder.build();
+        expect(prompt).toContain("Do this");
+        expect(prompt).toContain("Don't do this");
+        expect(prompt).toContain("Should do this");
+        expect(prompt).toContain("Should not do this");
+      });
+
+      test("supports method chaining", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraintIf(true, "must", "First")
+          .withConstraintIf(false, "must", "Second")
+          .withConstraintIf(true, "must", "Third");
+
+        expect(builder).toBeDefined();
+        const prompt = builder.build();
+        expect(prompt).toContain("First");
+        expect(prompt).not.toContain("Second");
+        expect(prompt).toContain("Third");
+      });
+
+      test("filters out empty rules", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraintIf(true, "must", "");
+
+        const prompt = builder.build();
+        expect(prompt).not.toContain("You MUST:");
+      });
+    });
+
+    describe("withToolIf()", () => {
+      test("adds tool when condition is true", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withToolIf(true, {
+            name: "search",
+            description: "Search tool",
+            schema: z.object({ query: z.string() }),
+          });
+
+        const prompt = builder.build();
+        expect(prompt).toContain("search");
+        expect(prompt).toContain("Search tool");
+      });
+
+      test("does not add tool when condition is false", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withToolIf(false, {
+            name: "search",
+            description: "Search tool",
+            schema: z.object({ query: z.string() }),
+          });
+
+        const prompt = builder.build();
+        expect(prompt).not.toContain("search");
+      });
+
+      test("supports method chaining", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withToolIf(true, {
+            name: "tool1",
+            description: "First tool",
+            schema: z.object({ a: z.string() }),
+          })
+          .withToolIf(false, {
+            name: "tool2",
+            description: "Second tool",
+            schema: z.object({ b: z.string() }),
+          })
+          .withToolIf(true, {
+            name: "tool3",
+            description: "Third tool",
+            schema: z.object({ c: z.string() }),
+          });
+
+        const prompt = builder.build();
+        expect(prompt).toContain("tool1");
+        expect(prompt).not.toContain("tool2");
+        expect(prompt).toContain("tool3");
+      });
+    });
+
+    describe("withConstraints() - Array Support", () => {
+      test("accepts single string", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraints("must", "Single rule");
+
+        const prompt = builder.build();
+        expect(prompt).toContain("Single rule");
+      });
+
+      test("accepts array of strings", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraints("must", ["Rule 1", "Rule 2", "Rule 3"]);
+
+        const prompt = builder.build();
+        expect(prompt).toContain("Rule 1");
+        expect(prompt).toContain("Rule 2");
+        expect(prompt).toContain("Rule 3");
+      });
+
+      test("filters out empty strings", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraints("must", ["Valid", "", "Also valid", ""]);
+
+        const prompt = builder.build();
+        expect(prompt).toContain("Valid");
+        expect(prompt).toContain("Also valid");
+      });
+
+      test("works with different types", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withConstraints("must", ["Must 1", "Must 2"])
+          .withConstraints("must_not", ["Must not 1", "Must not 2"])
+          .withConstraints("should", "Should do")
+          .withConstraints("should_not", ["Should not 1"]);
+
+        const prompt = builder.build();
+        expect(prompt).toContain("Must 1");
+        expect(prompt).toContain("Must not 2");
+        expect(prompt).toContain("Should do");
+        expect(prompt).toContain("Should not 1");
+      });
+    });
+  });
+
+  describe("State Introspection", () => {
+    describe("hasTools()", () => {
+      test("returns false when no tools", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasTools()).toBe(false);
+      });
+
+      test("returns true when tools exist", () => {
+        const builder = createPromptBuilder().withTool({
+          name: "test",
+          description: "Test",
+          schema: z.object({ q: z.string() }),
+        });
+        expect(builder.hasTools()).toBe(true);
+      });
+    });
+
+    describe("hasConstraints()", () => {
+      test("returns false when no constraints", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasConstraints()).toBe(false);
+      });
+
+      test("returns true when constraints exist", () => {
+        const builder = createPromptBuilder().withConstraint("must", "Test");
+        expect(builder.hasConstraints()).toBe(true);
+      });
+    });
+
+    describe("hasIdentity()", () => {
+      test("returns false when no identity", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasIdentity()).toBe(false);
+      });
+
+      test("returns true when identity set", () => {
+        const builder = createPromptBuilder().withIdentity("Test");
+        expect(builder.hasIdentity()).toBe(true);
+      });
+    });
+
+    describe("hasCapabilities()", () => {
+      test("returns false when no capabilities", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasCapabilities()).toBe(false);
+      });
+
+      test("returns true when capabilities exist", () => {
+        const builder = createPromptBuilder().withCapability("Test");
+        expect(builder.hasCapabilities()).toBe(true);
+      });
+    });
+
+    describe("hasExamples()", () => {
+      test("returns false when no examples", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasExamples()).toBe(false);
+      });
+
+      test("returns true when examples exist", () => {
+        const builder = createPromptBuilder().withExamples([
+          { user: "Hi", assistant: "Hello" },
+        ]);
+        expect(builder.hasExamples()).toBe(true);
+      });
+    });
+
+    describe("hasGuardrails()", () => {
+      test("returns false when guardrails not enabled", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasGuardrails()).toBe(false);
+      });
+
+      test("returns true when guardrails enabled", () => {
+        const builder = createPromptBuilder().withGuardrails();
+        expect(builder.hasGuardrails()).toBe(true);
+      });
+    });
+
+    describe("hasForbiddenTopics()", () => {
+      test("returns false when no forbidden topics", () => {
+        const builder = createPromptBuilder();
+        expect(builder.hasForbiddenTopics()).toBe(false);
+      });
+
+      test("returns true when forbidden topics exist", () => {
+        const builder = createPromptBuilder().withForbiddenTopics(["Medical"]);
+        expect(builder.hasForbiddenTopics()).toBe(true);
+      });
+    });
+
+    describe("getConstraintsByType()", () => {
+      test("returns empty array when no constraints", () => {
+        const builder = createPromptBuilder();
+        expect(builder.getConstraintsByType("must")).toEqual([]);
+      });
+
+      test("returns constraints of specific type", () => {
+        const builder = createPromptBuilder()
+          .withConstraint("must", "Must do")
+          .withConstraint("must_not", "Must not do")
+          .withConstraint("must", "Must also do");
+
+        const musts = builder.getConstraintsByType("must");
+        expect(musts.length).toBe(2);
+        expect(musts[0].rule).toBe("Must do");
+        expect(musts[1].rule).toBe("Must also do");
+      });
+
+      test("works for all constraint types", () => {
+        const builder = createPromptBuilder()
+          .withConstraint("must", "Must")
+          .withConstraint("must_not", "Must not")
+          .withConstraint("should", "Should")
+          .withConstraint("should_not", "Should not");
+
+        expect(builder.getConstraintsByType("must").length).toBe(1);
+        expect(builder.getConstraintsByType("must_not").length).toBe(1);
+        expect(builder.getConstraintsByType("should").length).toBe(1);
+        expect(builder.getConstraintsByType("should_not").length).toBe(1);
+      });
+    });
+
+    describe("getSummary()", () => {
+      test("returns comprehensive state summary", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test agent")
+          .withCapability("Cap 1")
+          .withCapability("Cap 2")
+          .withTool({
+            name: "tool1",
+            description: "Tool 1",
+            schema: z.object({ a: z.string() }),
+          })
+          .withConstraint("must", "Must 1")
+          .withConstraint("must_not", "Must not 1")
+          .withExamples([{ user: "Hi", assistant: "Hello" }])
+          .withGuardrails()
+          .withForbiddenTopics(["Topic 1", "Topic 2"]);
+
+        const summary = builder.getSummary();
+
+        expect(summary.hasIdentity).toBe(true);
+        expect(summary.capabilitiesCount).toBe(2);
+        expect(summary.toolsCount).toBe(1);
+        expect(summary.constraintsCount).toBe(2);
+        expect(summary.examplesCount).toBe(1);
+        expect(summary.hasGuardrails).toBe(true);
+        expect(summary.forbiddenTopicsCount).toBe(2);
+        expect(summary.format).toBe("markdown");
+        expect(summary.constraintsByType.must).toBe(1);
+        expect(summary.constraintsByType.must_not).toBe(1);
+      });
+
+      test("handles empty builder", () => {
+        const builder = createPromptBuilder();
+        const summary = builder.getSummary();
+
+        expect(summary.hasIdentity).toBe(false);
+        expect(summary.capabilitiesCount).toBe(0);
+        expect(summary.toolsCount).toBe(0);
+        expect(summary.constraintsCount).toBe(0);
+        expect(summary.examplesCount).toBe(0);
+        expect(summary.hasGuardrails).toBe(false);
+        expect(summary.forbiddenTopicsCount).toBe(0);
+      });
+    });
+  });
+
+  describe("Validation Integration", () => {
+    describe("validate()", () => {
+      test("validates builder state", () => {
+        const builder = createPromptBuilder().withIdentity("Test");
+        const result = builder.validate();
+
+        expect(result).toBeDefined();
+        expect(result.valid).toBeDefined();
+        expect(result.errors).toBeDefined();
+        expect(result.warnings).toBeDefined();
+        expect(result.info).toBeDefined();
+      });
+
+      test("detects duplicate tools", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withTool({
+            name: "duplicate",
+            description: "First",
+            schema: z.object({ a: z.string() }),
+          })
+          .withTool({
+            name: "duplicate",
+            description: "Second",
+            schema: z.object({ b: z.string() }),
+          });
+
+        const result = builder.validate();
+        expect(result.valid).toBe(false);
+        expect(result.errors.length).toBeGreaterThan(0);
+      });
+
+      test("warns about missing identity", () => {
+        const builder = createPromptBuilder();
+        const result = builder.validate();
+
+        expect(result.warnings.some((w) => w.code === "MISSING_IDENTITY")).toBe(
+          true
+        );
+      });
+
+      test("accepts custom validator config", () => {
+        const builder = createPromptBuilder();
+        const result = builder.validate({ checkIdentity: false });
+
+        expect(result.warnings.some((w) => w.code === "MISSING_IDENTITY")).toBe(
+          false
+        );
+      });
+    });
+
+    describe("withValidatorConfig()", () => {
+      test("sets default validator config", () => {
+        const builder = createPromptBuilder().withValidatorConfig({
+          checkIdentity: false,
+        });
+
+        const result = builder.validate();
+        expect(result.warnings.some((w) => w.code === "MISSING_IDENTITY")).toBe(
+          false
+        );
+      });
+
+      test("supports method chaining", () => {
+        const builder = createPromptBuilder()
+          .withIdentity("Test")
+          .withValidatorConfig({ checkRecommendations: false })
+          .withCapability("Test");
+
+        expect(builder).toBeDefined();
+        const result = builder.validate();
+        expect(result.info.length).toBe(0);
+      });
+
+      test("can be overridden in validate() call", () => {
+        const builder = createPromptBuilder().withValidatorConfig({
+          checkIdentity: false,
+        });
+
+        const result = builder.validate({ checkIdentity: true });
+        expect(result.warnings.some((w) => w.code === "MISSING_IDENTITY")).toBe(
+          true
+        );
+      });
+    });
+  });
+
+  describe("Debug Mode", () => {
+    test("debug() returns builder for chaining", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test")
+        .debug()
+        .withCapability("After debug");
+
+      expect(builder).toBeDefined();
+      expect(builder.hasCapabilities()).toBe(true);
+    });
+
+    test("debug() works with empty builder", () => {
+      const builder = createPromptBuilder();
+      expect(() => builder.debug()).not.toThrow();
+    });
+
+    test("debug() works with fully configured builder", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test agent")
+        .withCapabilities(["Cap 1", "Cap 2"])
+        .withTool({
+          name: "tool",
+          description: "Tool",
+          schema: z.object({ q: z.string() }),
+        })
+        .withConstraints("must", ["Rule 1", "Rule 2"])
+        .withExamples([{ user: "Hi", assistant: "Hello" }])
+        .withGuardrails()
+        .withForbiddenTopics(["Topic"]);
+
+      expect(() => builder.debug()).not.toThrow();
+    });
+
+    test("debug() works with TOON format", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test")
+        .withFormat("toon");
+
+      expect(() => builder.debug()).not.toThrow();
+    });
+  });
 });

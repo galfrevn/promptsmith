@@ -1,19 +1,55 @@
-# PromptSmith 🔨
-
 <div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/promptsmith-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/promptsmith-black.svg">
+    <img src="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/promptsmith-black.svg" alt="PromptSmith Logo" width="160" height="160">
+  </picture>
 
-**Stop wrestling with prompt strings. Start building AI agents that actually work.**
+  <h1 align="center">PromptSmith</h1>
 
-_Type-safe system prompt builder designed for production AI applications with the Vercel AI SDK_
+  <p align="center">
+    <strong>Type-Safe System Prompt Builder for Production AI Agents</strong>
+    <br />
+    Stop wrestling with prompt strings. Start building AI agents that actually work.
+  </p>
 
-[![npm version](https://img.shields.io/npm/v/promptsmith-ts.svg)](https://www.npmjs.com/package/promptsmith-ts)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
+  <p align="center">
+    <a href="https://www.npmjs.com/package/promptsmith-ts">
+      <img src="https://img.shields.io/npm/v/promptsmith-ts.svg?style=for-the-badge" alt="npm version">
+    </a>
+    <a href="https://www.npmjs.com/package/promptsmith-ts">
+      <img src="https://img.shields.io/npm/dm/promptsmith-ts.svg?style=for-the-badge" alt="npm downloads">
+    </a>
+    <a href="https://opensource.org/licenses/MIT">
+      <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT">
+    </a>
+    <a href="https://github.com/galfrevn/promptsmith/stargazers">
+      <img src="https://img.shields.io/github/stars/galfrevn/promptsmith?style=for-the-badge" alt="Stars">
+    </a>
+  </p>
 </div>
 
 ---
 
-## The Problem
+<div align="center">
+  <img src="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/banner-short.png" alt="PromptSmith Banner" width="100%" style="max-width: 1200px; border-radius: 8px;">
+</div>
+
+---
+
+## Table of Contents
+
+- [Why PromptSmith?](#why-promptsmith)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
+- [API Reference](#api-reference)
+- [Advanced Patterns](#advanced-patterns)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Why PromptSmith?
 
 You're building an AI agent. You start with a simple string prompt. Then you need to add tools. Then constraints. Then examples. Before you know it, you're managing 500-line template strings, copy-pasting security rules, and debugging why your agent ignores half your instructions.
 

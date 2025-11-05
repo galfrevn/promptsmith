@@ -14,17 +14,8 @@
   </p>
 
   <p align="center">
-    <a href="https://www.npmjs.com/package/promptsmith-ts">
-      <img src="https://img.shields.io/npm/v/promptsmith-ts.svg?style=for-the-badge" alt="npm version">
-    </a>
-    <a href="https://opensource.org/licenses/MIT">
-      <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT">
-    </a>
     <a href="https://github.com/galfrevn/promptsmith/graphs/contributors">
       <img src="https://img.shields.io/github/contributors/galfrevn/promptsmith?style=for-the-badge" alt="Contributors">
-    </a>
-    <a href="https://github.com/galfrevn/promptsmith/network/members">
-      <img src="https://img.shields.io/github/forks/galfrevn/promptsmith?style=for-the-badge" alt="Forks">
     </a>
     <a href="https://github.com/galfrevn/promptsmith/stargazers">
       <img src="https://img.shields.io/github/stars/galfrevn/promptsmith?style=for-the-badge" alt="Stars">
@@ -169,6 +160,14 @@ xml            ▓▓▓▓▓▓▓▓▓░░░░░░░░░░░    6
 ```
 
 *TOON format provides the best balance of efficiency and accuracy*
+
+---
+
+<div align="center">
+  <img src="./assets/banner.png" alt="PromptSmith Banner" width="100%" style="max-width: 1200px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
+</div>
+
+---
 
 ## Contributing
 

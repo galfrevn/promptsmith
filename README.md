@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./assets/promptsmith-white.svg">
     <source media="(prefers-color-scheme: light)" srcset="./assets/promptsmith-black.svg">
-    <img src="./assets/promptsmith-black.svg" alt="PromptSmith Logo" width="120" height="120">
+    <img src="./assets/promptsmith-black.svg" alt="PromptSmith Logo" width="160" height="160">
   </picture>
 
   <h1 align="center">PromptSmith</h1>
@@ -15,10 +15,22 @@
 
   <p align="center">
     <a href="https://www.npmjs.com/package/promptsmith-ts">
-      <img src="https://img.shields.io/npm/v/promptsmith-ts.svg" alt="npm version">
+      <img src="https://img.shields.io/npm/v/promptsmith-ts.svg?style=for-the-badge" alt="npm version">
     </a>
     <a href="https://opensource.org/licenses/MIT">
-      <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
+      <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT">
+    </a>
+    <a href="https://github.com/galfrevn/promptsmith/graphs/contributors">
+      <img src="https://img.shields.io/github/contributors/galfrevn/promptsmith?style=for-the-badge" alt="Contributors">
+    </a>
+    <a href="https://github.com/galfrevn/promptsmith/network/members">
+      <img src="https://img.shields.io/github/forks/galfrevn/promptsmith?style=for-the-badge" alt="Forks">
+    </a>
+    <a href="https://github.com/galfrevn/promptsmith/stargazers">
+      <img src="https://img.shields.io/github/stars/galfrevn/promptsmith?style=for-the-badge" alt="Stars">
+    </a>
+    <a href="https://github.com/galfrevn/promptsmith/issues">
+      <img src="https://img.shields.io/github/issues/galfrevn/promptsmith?style=for-the-badge" alt="Issues">
     </a>
   </p>
 </div>
@@ -80,6 +92,7 @@ promptsmith/
 │   │   └── __tests__/           # Test suite
 │   └── docs/              # Documentation site (Next.js + Fumadocs)
 ├── assets/                # Logo and branding
+├── CONTRIBUTING.md        # Contributing guidelines
 └── package.json           # Monorepo configuration
 ```
 
@@ -159,25 +172,42 @@ xml            ▓▓▓▓▓▓▓▓▓░░░░░░░░░░░    6
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Run quality checks: `bun run lint && bun run format && bun test`
-5. Commit: `git commit -m 'Add amazing feature'`
-6. Push: `git push origin feature/amazing-feature`
-7. Open a Pull Request
+Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Development setup and workflow
+- Coding standards and best practices
+- Testing requirements
+- Pull request process
+- How to report issues
+
+Quick start for contributors:
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/galfrevn/promptsmith.git
+cd promptsmith
+
+# Install dependencies
+bun install
+
+# Make your changes, add tests, then run quality checks
+bun lint && bun format && bun test
+
+# Create a pull request
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for complete guidelines.
 
 ## License
-
 MIT License - see [LICENSE](LICENSE) for details.
 
 ## Links
 
 - 📦 [NPM Package](https://www.npmjs.com/package/promptsmith-ts)
-- � [Full Documentation](./apps/core/README.md)
-- � [GitHub Repository](https://github.com/galfrevn/promptsmith)
+- 📚 [Full Documentation](./apps/core/README.md)
+- 🐙 [GitHub Repository](https://github.com/galfrevn/promptsmith)
 - 🐛 [Report Issues](https://github.com/galfrevn/promptsmith/issues)
 - 🔗 [Vercel AI SDK](https://sdk.vercel.ai/)
 
@@ -186,8 +216,10 @@ MIT License - see [LICENSE](LICENSE) for details.
 <div align="center">
   <strong>Built with ❤️ for the Vercel AI SDK community</strong>
 </div>
+
   ·
   Made by <a href="https://github.com/galfrevn">@galfrevn</a>
 
+  ·
   Hephaestus by parkjisun from <a href="https://thenounproject.com/browse/icons/term/hephaestus/" target="_blank" title="Hephaestus Icons">Noun Project</a> (CC BY 3.0)
 </div>

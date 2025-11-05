@@ -28,6 +28,12 @@
 
 ---
 
+<div align="center">
+  <img src="./assets/banner-short.png" alt="PromptSmith Banner" width="100%" style="max-width: 1200px; border-radius: 8px;">
+</div>
+
+---
+
 ## What is PromptSmith?
 
 A type-safe, composable prompt builder for the [Vercel AI SDK](https://sdk.vercel.ai/). Build production-ready AI agents with built-in security, tool integration, and token optimization.

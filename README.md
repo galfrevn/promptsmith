@@ -164,7 +164,7 @@ xml            ▓▓▓▓▓▓▓▓▓░░░░░░░░░░░    6
 ---
 
 <div align="center">
-  <img src="./assets/banner.png" alt="PromptSmith Banner" width="100%" style="max-width: 1200px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
+  <img src="./assets/banner-large.png" alt="PromptSmith Banner" width="100%">
 </div>
 
 ---

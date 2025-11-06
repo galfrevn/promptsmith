@@ -1596,6 +1596,94 @@ export class SystemPromptBuilder {
   }
 
   /**
+   * Exports configuration for Mastra agents.
+   *
+   * This method generates a Mastra-compatible configuration object with the system
+   * prompt as `instructions` and tools converted to Mastra's format. This prevents
+   * tool duplication - define tools once in PromptSmith and they're automatically
+   * converted to both formats.
+   *
+   * The tools are converted to match Mastra's expected structure:
+   * - `name` → `id`
+   * - `schema` → `inputSchema`
+   * - `execute` function is passed through
+   *
+   * @returns An object with `instructions` (system prompt) and `tools` (Mastra format)
+   *
+   * @example
+   * ```typescript
+   * import { Agent } from "@mastra/core/agent";
+   * import { createPromptBuilder } from "promptsmith-ts/builder";
+   * import { z } from "zod";
+   *
+   * const promptBuilder = createPromptBuilder()
+   *   .withIdentity("Weather assistant")
+   *   .withTool({
+   *     name: "get-weather",
+   *     description: "Get current weather",
+   *     schema: z.object({
+   *       location: z.string(),
+   *       units: z.enum(["celsius", "fahrenheit"]).default("celsius"),
+   *     }),
+   *     execute: async ({ location, units }) => {
+   *       return await fetchWeather(location, units);
+   *     },
+   *   });
+   *
+   * const { instructions, tools } = promptBuilder.toMastra();
+   *
+   * const agent = new Agent({
+   *   name: "weather-agent",
+   *   instructions,
+   *   model: "openai/gpt-4o",
+   *   tools,
+   * });
+   * ```
+   */
+  toMastra(): {
+    instructions: string;
+    tools: Record<
+      string,
+      {
+        id: string;
+        description: string;
+        inputSchema: import("zod").ZodType;
+        execute?: (args: { context: unknown }) => Promise<unknown> | unknown;
+      }
+    >;
+  } {
+    const tools: Record<
+      string,
+      {
+        id: string;
+        description: string;
+        inputSchema: import("zod").ZodType;
+        execute?: (args: { context: unknown }) => Promise<unknown> | unknown;
+      }
+    > = {};
+
+    for (const tool of this._tools) {
+      tools[tool.name] = {
+        id: tool.name,
+        description: tool.description,
+        inputSchema: tool.schema,
+        // Wrap execute to match Mastra's { context } signature
+        execute: tool.execute
+          ? async (args: { context: unknown }) => {
+              // biome-ignore lint/style/noNonNullAssertion: execute is checked above
+              return await tool.execute!(args.context);
+            }
+          : undefined,
+      };
+    }
+
+    return {
+      instructions: this.build(),
+      tools,
+    };
+  }
+
+  /**
    * Exports the builder's configuration as a plain JavaScript object.
    *
    * This method serializes the entire builder state into a JSON-compatible

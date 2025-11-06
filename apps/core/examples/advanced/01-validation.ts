@@ -74,7 +74,7 @@ function main() {
     .withIdentity("Test agent")
     .withValidatorConfig({
       checkDuplicateTools: true,
-      checkMissingIdentity: true,
+      checkIdentity: true,
       checkEmptySections: false, // Don't warn about empty sections
       checkRecommendations: true,
     });

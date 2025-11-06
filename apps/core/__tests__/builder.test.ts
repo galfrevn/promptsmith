@@ -2263,6 +2263,165 @@ Line 3: Final notes`;
     });
   });
 
+  describe("Mastra Tool Compatibility", () => {
+    test("detects Mastra tool format correctly", () => {
+      const mastraTool = {
+        id: "test-tool",
+        description: "A test tool",
+        inputSchema: z.object({ input: z.string() }),
+        execute: async ({ context }: { context: any }) => context.input,
+      };
+
+      const builder = createPromptBuilder().withTool(mastraTool);
+
+      const tools = builder.getTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].name).toBe("test-tool");
+      expect(tools[0].description).toBe("A test tool");
+    });
+
+    test("converts Mastra tool to PromptSmith format", () => {
+      const mastraTool = {
+        id: "weather",
+        description: "Get weather data",
+        inputSchema: z.object({
+          city: z.string(),
+          units: z.enum(["celsius", "fahrenheit"]),
+        }),
+        outputSchema: z.object({
+          temperature: z.number(),
+          conditions: z.string(),
+        }),
+        execute: async () => ({
+          temperature: 22,
+          conditions: "Sunny",
+        }),
+      };
+
+      const builder = createPromptBuilder().withTool(mastraTool);
+
+      const tools = builder.getTools();
+      expect(tools[0].name).toBe("weather");
+      expect(tools[0].schema).toBe(mastraTool.inputSchema);
+      expect(tools[0].execute).toBeDefined();
+    });
+
+    test("adapts Mastra execute signature to PromptSmith", async () => {
+      const mastraTool = {
+        id: "add",
+        description: "Add two numbers",
+        inputSchema: z.object({
+          a: z.number(),
+          b: z.number(),
+        }),
+        execute: async ({ context }: { context: any }) => context.a + context.b,
+      };
+
+      const builder = createPromptBuilder().withTool(mastraTool);
+
+      const tools = builder.getTools();
+      const result = await tools[0].execute?.({ a: 5, b: 3 });
+
+      expect(result).toBe(8);
+    });
+
+    test("works with Mastra tools without execute function", () => {
+      const mastraTool = {
+        id: "doc-only",
+        description: "Documentation only tool",
+        inputSchema: z.object({ param: z.string() }),
+      };
+
+      const builder = createPromptBuilder().withTool(mastraTool);
+
+      const tools = builder.getTools();
+      expect(tools[0].name).toBe("doc-only");
+      expect(tools[0].execute).toBeUndefined();
+    });
+
+    test("mixes PromptSmith and Mastra tools correctly", () => {
+      const mastraTool = {
+        id: "mastra-tool",
+        description: "Mastra tool",
+        inputSchema: z.object({ input: z.string() }),
+      };
+
+      const promptsmithTool = {
+        name: "promptsmith-tool",
+        description: "PromptSmith tool",
+        schema: z.object({ query: z.string() }),
+      };
+
+      const builder = createPromptBuilder()
+        .withTool(mastraTool)
+        .withTool(promptsmithTool);
+
+      const tools = builder.getTools();
+      expect(tools).toHaveLength(2);
+      expect(tools[0].name).toBe("mastra-tool");
+      expect(tools[1].name).toBe("promptsmith-tool");
+    });
+
+    test("does not confuse PromptSmith tools for Mastra tools", () => {
+      const promptsmithTool = {
+        name: "test-tool",
+        description: "A PromptSmith tool",
+        schema: z.object({ input: z.string() }),
+        execute: async ({ input }: { input: string }) => input.toUpperCase(),
+      };
+
+      const builder = createPromptBuilder().withTool(promptsmithTool);
+
+      const tools = builder.getTools();
+      expect(tools[0].name).toBe("test-tool");
+      expect(tools[0].schema).toBe(promptsmithTool.schema);
+    });
+
+    test("exports Mastra-converted tools correctly to AI SDK", () => {
+      const mastraTool = {
+        id: "search",
+        description: "Search tool",
+        inputSchema: z.object({ query: z.string() }),
+        execute: async ({ context }: { context: any }) =>
+          `Results for ${context.query}`,
+      };
+
+      const builder = createPromptBuilder()
+        .withIdentity("Assistant")
+        .withTool(mastraTool);
+
+      const { tools } = builder.toAiSdk();
+
+      expect(tools.search).toBeDefined();
+      expect(tools.search.description).toBe("Search tool");
+    });
+
+    test("exports Mastra-converted tools correctly back to Mastra", () => {
+      const mastraTool = {
+        id: "calculator",
+        description: "Calculate",
+        inputSchema: z.object({ expression: z.string() }),
+        execute: async ({ context }: { context: any }) => {
+          // Simple calculation mock (avoiding eval for security)
+          const expr = context.expression;
+          if (expr === "2+2") return 4;
+          if (expr === "5*3") return 15;
+          return 0;
+        },
+      };
+
+      const builder = createPromptBuilder()
+        .withIdentity("Math assistant")
+        .withTool(mastraTool);
+
+      const { tools } = builder.toMastra();
+
+      expect(tools.calculator).toBeDefined();
+      expect(tools.calculator.id).toBe("calculator");
+      expect(tools.calculator.inputSchema).toBe(mastraTool.inputSchema);
+    });
+  });
+
   describe("Format Selection", () => {
     let builder: SystemPromptBuilder;
 

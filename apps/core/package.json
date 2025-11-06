@@ -2,7 +2,7 @@
   "name": "promptsmith-ts",
   "author": "Valentín Galfré <galfre.vn@gmail.com>",
   "description": "Type-safe system prompt builder for AI agents with fluent API",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",

@@ -6,6 +6,7 @@ import type {
   ConstraintType,
   Example,
   ExecutableToolDefinition,
+  MastraToolDefinition,
   PromptFormat,
 } from "./types";
 import {
@@ -86,6 +87,72 @@ export class SystemPromptBuilder {
   private _format: PromptFormat = "markdown";
   private readonly _cache = new PromptCache();
   private _validatorConfig?: ValidatorConfig;
+
+  /**
+   * Type guard to check if a tool definition is from Mastra.
+   *
+   * Detects Mastra tools by checking for Mastra-specific properties (`id`, `inputSchema`)
+   * and ensuring PromptSmith properties (`name`, `schema`) are absent.
+   *
+   * @param tool - The tool definition to check
+   * @returns True if the tool is a Mastra tool, false otherwise
+   */
+  private isMastraTool(
+    tool:
+      | ExecutableToolDefinition
+      | MastraToolDefinition
+      | Record<string, unknown>
+  ): tool is MastraToolDefinition {
+    if (!tool || typeof tool !== "object") {
+      return false;
+    }
+
+    // Check for Mastra-specific properties
+    const hasMastraSignature =
+      "id" in tool &&
+      typeof tool.id === "string" &&
+      "inputSchema" in tool &&
+      "description" in tool &&
+      typeof tool.description === "string";
+
+    // Ensure it's NOT a PromptSmith tool
+    const isNotPromptSmithTool = !("name" in tool && "schema" in tool);
+
+    return hasMastraSignature && isNotPromptSmithTool;
+  }
+
+  /**
+   * Converts a Mastra tool definition to PromptSmith format.
+   *
+   * Transforms Mastra's tool structure to PromptSmith's internal format:
+   * - `id` → `name`
+   * - `inputSchema` → `schema`
+   * - Adapts `execute` function signature from `{ context, ... }` to direct params
+   *
+   * @param mastraTool - The Mastra tool to convert
+   * @returns A PromptSmith-compatible tool definition
+   */
+  private convertMastraToolToPromptSmith(
+    mastraTool: MastraToolDefinition
+  ): ExecutableToolDefinition {
+    return {
+      name: mastraTool.id,
+      description: mastraTool.description,
+      schema: mastraTool.inputSchema,
+      execute: mastraTool.execute
+        ? async (params: unknown) => {
+            // Adapt PromptSmith's direct params to Mastra's { context } signature
+            // biome-ignore lint/style/noNonNullAssertion: execute is checked above
+            return await mastraTool.execute!({
+              context: params,
+              runtimeContext: undefined,
+              tracingContext: undefined,
+              abortSignal: undefined,
+            });
+          }
+        : undefined,
+    };
+  }
 
   /**
    * Sets the agent's core identity or purpose.
@@ -174,7 +241,7 @@ export class SystemPromptBuilder {
   }
 
   /**
-   * Registers a tool that the agent can use.
+   * Registers a tool that the agent can use (PromptSmith format).
    *
    * Tools are external functions or APIs that the agent can invoke to perform
    * actions or retrieve information. This method registers the tool's
@@ -188,7 +255,7 @@ export class SystemPromptBuilder {
    * When provided, the tool can be exported directly to AI SDK format.
    *
    * @template T - The Zod schema type for the tool's parameters
-   * @param def - Tool definition containing name, description, parameter schema, and optionally an execute function
+   * @param def - Tool definition in PromptSmith format
    *
    * @returns The builder instance for method chaining
    *
@@ -203,13 +270,17 @@ export class SystemPromptBuilder {
    *   })
    * });
    *
-   * // With execution logic
+   * // With execution logic - full type inference
    * builder.withTool({
    *   name: "get_weather",
    *   description: "Get current weather",
-   *   schema: z.object({ location: z.string() }),
-   *   execute: async ({ location }) => {
-   *     const response = await fetch(`https://api.weather.com/${location}`);
+   *   schema: z.object({
+   *     location: z.string(),
+   *     units: z.enum(["celsius", "fahrenheit"])
+   *   }),
+   *   execute: async ({ location, units }) => {
+   *     // ✅ TypeScript infers: location is string, units is "celsius" | "fahrenheit"
+   *     const response = await fetch(`https://api.weather.com/${location}?units=${units}`);
    *     return response.json();
    *   }
    * });
@@ -217,8 +288,50 @@ export class SystemPromptBuilder {
    */
   withTool<T extends import("zod").ZodType>(
     def: ExecutableToolDefinition<T>
+  ): this;
+
+  /**
+   * Registers a tool created with Mastra's `createTool()` function.
+   *
+   * This overload automatically detects and converts tools from Mastra's format
+   * to PromptSmith's internal format, enabling seamless interoperability between
+   * the two frameworks.
+   *
+   * @param def - Tool definition in Mastra format (created with `createTool()`)
+   *
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { createTool } from "@mastra/core/tools";
+   *
+   * const weatherTool = createTool({
+   *   id: "weather-tool",
+   *   description: "Get weather",
+   *   inputSchema: z.object({ location: z.string() }),
+   *   execute: async ({ context }) => fetchWeather(context.location)
+   * });
+   *
+   * builder.withTool(weatherTool); // Automatically converted!
+   * ```
+   */
+  withTool(def: MastraToolDefinition): this;
+
+  /**
+   * Implementation signature for withTool overloads.
+   * @internal
+   */
+  withTool<T extends import("zod").ZodType>(
+    def: ExecutableToolDefinition<T> | MastraToolDefinition
   ): this {
-    this._tools.push(def);
+    // Check if this is a Mastra tool and convert it
+    if (this.isMastraTool(def)) {
+      const converted = this.convertMastraToolToPromptSmith(def);
+      this._tools.push(converted);
+    } else {
+      this._tools.push(def as ExecutableToolDefinition<T>);
+    }
+
     this._cache.invalidate();
     return this;
   }

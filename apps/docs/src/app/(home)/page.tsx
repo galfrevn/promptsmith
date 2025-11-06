@@ -1,9 +1,9 @@
-import Image from "next/image";
+import HeroSection from "./sections/hero";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <h1 className="font-mono">Promptsmith</h1>
+    <div className="bg-zinc-50 font-sans dark:bg-black">
+      <HeroSection />
     </div>
   );
 }

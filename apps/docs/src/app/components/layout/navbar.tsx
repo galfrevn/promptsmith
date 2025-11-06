@@ -20,7 +20,7 @@ export const Navbar = () => (
   >
     <nav className="flex w-full items-center justify-between px-12 py-4">
       <Link
-        className="flex items-center gap-4 transition-transform duration-300 hover:rotate-6 hover:scale-105"
+        className="flex items-center gap-4 transition-transform duration-300 hover:rotate-6 hover:scale-105 hover:opacity-95"
         href={"/"}
       >
         <Image

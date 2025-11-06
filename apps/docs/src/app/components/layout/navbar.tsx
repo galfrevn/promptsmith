@@ -15,8 +15,8 @@ export const Navbar = () => (
   <motion.header
     className="fixed top-0 left-0 z-50 w-full border-muted border-b bg-black"
     initial={{ opacity: 0, backdropFilter: "blur(20px)" }}
-    transition={{ duration: 1, type: "spring", delay: 0.25 }}
-    whileInView={{ opacity: 1, backdropFilter: "blur(0px)" }}
+    transition={{ duration: 1.5, type: "spring", delay: 0.25 }}
+    whileInView={{ opacity: 1.5, backdropFilter: "blur(0px)" }}
   >
     <nav className="flex w-full items-center justify-between px-12 py-4">
       <Link
@@ -25,9 +25,9 @@ export const Navbar = () => (
       >
         <Image
           alt="Promptsmith application logo: stylized icon representing AI-powered prompt creation"
-          height={36}
-          src="/promptsmith.svg"
-          width={36}
+          height={48}
+          src="/promptsmith-icon.svg"
+          width={48}
         />
       </Link>
 

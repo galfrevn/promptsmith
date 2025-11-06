@@ -67,7 +67,7 @@ export default function HeroBadge({
         initial={{ opacity: 0, y: 20, backdropFilter: "blur(20px)" }}
         onHoverEnd={() => controls.start("initial")}
         onHoverStart={() => controls.start("hover")}
-        transition={{ duration: 1.5, type: "spring", delay: 0.25 }}
+        transition={{ duration: 2, type: "spring", delay: 0.3 }}
       >
         {icon && (
           <motion.div

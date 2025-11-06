@@ -1606,9 +1606,10 @@ export class SystemPromptBuilder {
    * The tools are converted to match Mastra's expected structure:
    * - `name` → `id`
    * - `schema` → `inputSchema`
-   * - `execute` function is passed through
+   * - `execute` receives `{ context }` parameter matching Mastra's signature
+   * - Returns an object where keys are tool names (for Mastra's `tools: { toolName }` syntax)
    *
-   * @returns An object with `instructions` (system prompt) and `tools` (Mastra format)
+   * @returns An object with `instructions` (system prompt) and `tools` (Mastra format object)
    *
    * @example
    * ```typescript
@@ -1619,24 +1620,24 @@ export class SystemPromptBuilder {
    * const promptBuilder = createPromptBuilder()
    *   .withIdentity("Weather assistant")
    *   .withTool({
-   *     name: "get-weather",
+   *     name: "weatherTool",
    *     description: "Get current weather",
    *     schema: z.object({
    *       location: z.string(),
-   *       units: z.enum(["celsius", "fahrenheit"]).default("celsius"),
    *     }),
-   *     execute: async ({ location, units }) => {
-   *       return await fetchWeather(location, units);
+   *     execute: async ({ location }) => {
+   *       return await fetchWeather(location);
    *     },
    *   });
    *
    * const { instructions, tools } = promptBuilder.toMastra();
    *
+   * // Use with Mastra Agent - tools is an object
    * const agent = new Agent({
    *   name: "weather-agent",
    *   instructions,
    *   model: "openai/gpt-4o",
-   *   tools,
+   *   tools, // { weatherTool: { id, description, inputSchema, execute } }
    * });
    * ```
    */
@@ -1648,6 +1649,7 @@ export class SystemPromptBuilder {
         id: string;
         description: string;
         inputSchema: import("zod").ZodType;
+        outputSchema?: import("zod").ZodType;
         execute?: (args: { context: unknown }) => Promise<unknown> | unknown;
       }
     >;
@@ -1658,6 +1660,7 @@ export class SystemPromptBuilder {
         id: string;
         description: string;
         inputSchema: import("zod").ZodType;
+        outputSchema?: import("zod").ZodType;
         execute?: (args: { context: unknown }) => Promise<unknown> | unknown;
       }
     > = {};
@@ -1667,6 +1670,7 @@ export class SystemPromptBuilder {
         id: tool.name,
         description: tool.description,
         inputSchema: tool.schema,
+        outputSchema: undefined, // Optional in Mastra
         // Wrap execute to match Mastra's { context } signature
         execute: tool.execute
           ? async (args: { context: unknown }) => {

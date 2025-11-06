@@ -2066,6 +2066,203 @@ Line 3: Final notes`;
     });
   });
 
+  describe("Mastra Integration", () => {
+    test("toMastra() returns object with instructions and tools properties", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Weather assistant")
+        .withTool({
+          name: "get_weather",
+          description: "Get current weather",
+          schema: z.object({
+            location: z.string(),
+            units: z.enum(["celsius", "fahrenheit"]),
+          }),
+          execute: async ({ location, units }) => ({
+            location,
+            temperature: units === "celsius" ? 22 : 72,
+          }),
+        });
+
+      const config = builder.toMastra();
+
+      expect(config).toHaveProperty("instructions");
+      expect(config).toHaveProperty("tools");
+      expect(typeof config.instructions).toBe("string");
+      expect(typeof config.tools).toBe("object");
+    });
+
+    test("instructions property contains full system prompt", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Test assistant")
+        .withCapabilities(["Capability 1", "Capability 2"])
+        .withTone("Professional");
+
+      const { instructions } = builder.toMastra();
+
+      expect(instructions).toContain("Test assistant");
+      expect(instructions).toContain("Capability 1");
+      expect(instructions).toContain("Professional");
+    });
+
+    test("tools are exported as object with tool names as keys", () => {
+      const builder = createPromptBuilder()
+        .withTool({
+          name: "tool1",
+          description: "First tool",
+          schema: z.object({ param1: z.string() }),
+        })
+        .withTool({
+          name: "tool2",
+          description: "Second tool",
+          schema: z.object({ param2: z.number() }),
+        });
+
+      const { tools } = builder.toMastra();
+
+      expect(typeof tools).toBe("object");
+      expect(tools.tool1).toBeDefined();
+      expect(tools.tool2).toBeDefined();
+      expect(tools.tool1.id).toBe("tool1");
+      expect(tools.tool2.id).toBe("tool2");
+    });
+
+    test("tool format matches Mastra structure", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "test_tool",
+        description: "A test tool",
+        schema: z.object({ input: z.string() }),
+        execute: ({ input }) => input.toUpperCase(),
+      });
+
+      const { tools } = builder.toMastra();
+      const tool = tools.test_tool;
+
+      expect(tool).toHaveProperty("id");
+      expect(tool).toHaveProperty("description");
+      expect(tool).toHaveProperty("inputSchema");
+      expect(tool).toHaveProperty("outputSchema");
+      expect(tool).toHaveProperty("execute");
+
+      expect(tool.id).toBe("test_tool");
+      expect(tool.description).toBe("A test tool");
+      expect(tool.inputSchema).toBeDefined();
+      expect(tool.outputSchema).toBeUndefined(); // Optional in Mastra
+    });
+
+    test("execute function uses { context } signature", async () => {
+      const builder = createPromptBuilder().withTool({
+        name: "add",
+        description: "Add two numbers",
+        schema: z.object({
+          a: z.number(),
+          b: z.number(),
+        }),
+        execute: ({ a, b }) => a + b,
+      });
+
+      const { tools } = builder.toMastra();
+      const result = await tools.add.execute?.({
+        context: { a: 5, b: 3 },
+      });
+
+      expect(result).toBe(8);
+    });
+
+    test("handles tools without execute function", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "doc_only_tool",
+        description: "Documentation only",
+        schema: z.object({ param: z.string() }),
+      });
+
+      const { tools } = builder.toMastra();
+
+      expect(tools.doc_only_tool.execute).toBeUndefined();
+    });
+
+    test("handles asynchronous execute functions", async () => {
+      const builder = createPromptBuilder().withTool({
+        name: "async_tool",
+        description: "Async operation",
+        schema: z.object({ delay: z.number() }),
+        execute: async ({ delay }) => {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return "done";
+        },
+      });
+
+      const { tools } = builder.toMastra();
+      const result = await tools.async_tool.execute?.({
+        context: { delay: 10 },
+      });
+
+      expect(result).toBe("done");
+    });
+
+    test("works with builder that has no tools", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Simple assistant")
+        .withCapabilities(["Chat"]);
+
+      const { instructions, tools } = builder.toMastra();
+
+      expect(instructions).toContain("Simple assistant");
+      expect(tools).toEqual({});
+    });
+
+    test("multiple tools are all accessible by name", () => {
+      const builder = createPromptBuilder()
+        .withTool({
+          name: "first",
+          description: "First",
+          schema: z.object({}),
+        })
+        .withTool({
+          name: "second",
+          description: "Second",
+          schema: z.object({}),
+        })
+        .withTool({
+          name: "third",
+          description: "Third",
+          schema: z.object({}),
+        });
+
+      const { tools } = builder.toMastra();
+
+      expect(tools.first).toBeDefined();
+      expect(tools.second).toBeDefined();
+      expect(tools.third).toBeDefined();
+      expect(Object.keys(tools)).toHaveLength(3);
+    });
+
+    test("can be used directly with Mastra Agent constructor", () => {
+      const builder = createPromptBuilder()
+        .withIdentity("Customer support")
+        .withCapabilities(["Handle inquiries"])
+        .withTool({
+          name: "searchTool",
+          description: "Search database",
+          schema: z.object({ query: z.string() }),
+          execute: ({ query }) => `Results for: ${query}`,
+        });
+
+      const { instructions, tools } = builder.toMastra();
+
+      // Simulate Mastra Agent config
+      const mockAgentConfig = {
+        name: "support-agent",
+        instructions,
+        model: "openai/gpt-4",
+        tools, // Object format: { searchTool: {...} }
+      };
+
+      expect(mockAgentConfig.instructions).toContain("Customer support");
+      expect(mockAgentConfig.tools.searchTool).toBeDefined();
+      expect(typeof mockAgentConfig.tools).toBe("object");
+    });
+  });
+
   describe("Format Selection", () => {
     let builder: SystemPromptBuilder;
 

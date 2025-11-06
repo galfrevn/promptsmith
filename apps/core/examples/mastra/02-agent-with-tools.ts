@@ -8,7 +8,8 @@
  * Key concepts:
  * - Define tools once in PromptSmith
  * - Automatic tool conversion with `.toMastra()`
- * - Tool signature adaptation (params → context)
+ * - Tool signature adaptation (params → { context })
+ * - Tools exported as object (Mastra's format)
  */
 
 import { Agent } from "@mastra/core/agent";
@@ -30,7 +31,7 @@ async function main() {
     .withIdentity("Weather information assistant")
     .withCapabilities(["Provide current weather conditions"])
     .withTool({
-      name: "get-weather",
+      name: "weatherTool",
       description: "Get current weather for a location",
       schema: z.object({
         location: z.string(),
@@ -51,7 +52,7 @@ async function main() {
     name: "weather-assistant",
     instructions,
     model: "anthropic/claude-3-5-sonnet",
-    tools, // Already in Mastra format - no duplication!
+    tools, // Object format: { weatherTool: {...} }
   });
 
   const response = await weatherAgent.generate([

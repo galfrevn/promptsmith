@@ -18,7 +18,7 @@ export const features = [
   {
     id: 3,
     icon: <PrompsmithIcons.GitBranch className="size-6 text-primary" />,
-    title: "Built for Teams",
-    description: "Collaborate, version, and share prompt libraries seamlessly.",
+    title: "Start faster with 7 templates.",
+    description: "Customize them or build your own — no boilerplate needed.",
   },
 ];

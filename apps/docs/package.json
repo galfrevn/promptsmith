@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@remixicon/react": "^4.7.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -18,7 +19,9 @@
     "lucide-react": "^0.552.0",
     "motion": "^12.23.24",
     "next": "16.0.1",
+    "next-themes": "^0.4.6",
     "postprocessing": "^6.37.8",
+    "radix-ui": "^1.4.3",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "shiki": "^3.15.0",

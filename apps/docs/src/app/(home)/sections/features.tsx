@@ -23,7 +23,8 @@ const FeaturesSection = () => (
         </BlurFade>
         <BlurFade delay={0.5} inView>
           <p className="mt-4 text-lg text-muted-foreground">
-            Everything you need to build, organize, and scale your prompts.
+            Everything you need to go from idea to production fast, type-safe,
+            and fully integrated with your workflow.
           </p>
         </BlurFade>
       </div>

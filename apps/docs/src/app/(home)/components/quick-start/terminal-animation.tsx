@@ -6,12 +6,14 @@ import {
 } from "@/components/ui/terminal";
 
 const TerminalAnimation = () => (
-  <BlurFade delay={1} inView>
+  <BlurFade delay={1.5} inView>
     <Terminal className="w-full max-w-5xl text-muted-foreground">
-      <TypingAnimation className="text-primary" duration={50}>
+      <TypingAnimation className="text-primary" delay={1000} duration={50}>
         npm install promptsmith-ts
       </TypingAnimation>
-      <TypingAnimation delay={10_000}>Install dependencies...</TypingAnimation>
+      <TypingAnimation delay={1000} duration={50}>
+        Install dependencies...
+      </TypingAnimation>
       <AnimatedSpan delay={5000}>✔ Preflight checks.</AnimatedSpan>
       <AnimatedSpan delay={5000}>✔ Validating Tailwind CSS setup.</AnimatedSpan>
       <AnimatedSpan delay={5000}>

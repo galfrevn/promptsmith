@@ -1,5 +1,7 @@
 import {
   RiArrowRightLine,
+  RiCheckLine,
+  RiCloseLargeLine,
   RiFlashlightLine,
   RiGitBranchLine,
   RiGithubLine,
@@ -12,4 +14,6 @@ export const PrompsmithIcons = {
   ArrowRight: RiArrowRightLine,
   Puzzle: RiPuzzleLine,
   GitBranch: RiGitBranchLine,
+  Close: RiCloseLargeLine,
+  Check: RiCheckLine,
 };

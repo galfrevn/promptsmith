@@ -1,5 +1,6 @@
 import FeaturesSection from "./sections/features";
 import HeroSection from "./sections/hero";
+import PromptComparisonSection from "./sections/prompt-comparison";
 import QuickStartSection from "./sections/quick-start";
 
 export default function Home() {
@@ -8,6 +9,7 @@ export default function Home() {
       <HeroSection />
       <FeaturesSection />
       <QuickStartSection />
+      <PromptComparisonSection />
     </div>
   );
 }

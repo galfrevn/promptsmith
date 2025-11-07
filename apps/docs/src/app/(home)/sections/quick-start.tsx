@@ -27,8 +27,8 @@ const QuickStartSection = () => (
       </header>
 
       <div className="space-y-6">
-        <TerminalAnimation />
         <InstallCommand />
+        <TerminalAnimation />
       </div>
     </div>
   </section>

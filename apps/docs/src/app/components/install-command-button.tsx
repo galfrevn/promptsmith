@@ -36,7 +36,7 @@ export const InstallCommand = () => {
   const activeCommand = commands.find((command) => command.label === value);
 
   return (
-    <BlurFade delay={1.5} inView>
+    <BlurFade delay={1} inView>
       <Snippet className="bg-background" onValueChange={setValue} value={value}>
         <SnippetHeader className="bg-background p-2">
           <SnippetTabsList className="bg-border">

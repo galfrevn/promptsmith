@@ -8,7 +8,7 @@ import { PrompsmithIcons } from "@/components/icons";
 const menuItems = [
   { id: 1, name: "Features", href: "#features" },
   { id: 2, name: "Quick Start", href: "#quick-start" },
-  { id: 3, name: "Docs", href: "/docs" },
+  { id: 3, name: "Docs", href: "https://github.com/galfrevn/promptsmith" },
 ];
 
 export const Navbar = () => (

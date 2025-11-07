@@ -52,7 +52,7 @@ const HeroSection = () => (
           asChild
           className="flex items-center gap-2 rounded-sm border border-primary bg-transparent transition-colors duration-300 hover:bg-foreground/10"
         >
-          <Link href="/docs">
+          <Link href="https://github.com/galfrevn/promptsmith">
             View docs <PrompsmithIcons.ArrowRight className="size-4" />
           </Link>
         </Button>

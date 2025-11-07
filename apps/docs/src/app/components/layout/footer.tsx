@@ -22,7 +22,7 @@ const links = [
 
 const Footer = () => (
   <motion.footer
-    className="flex justify-between border-muted border-t bg-black px-12 py-6"
+    className="mt-16 flex justify-between border-muted border-t bg-black px-12 py-6"
     initial={{ opacity: 0 }}
     transition={{ duration: 1, type: "spring", delay: 0.25 }}
     viewport={{ once: true }}

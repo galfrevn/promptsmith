@@ -1,3 +1,4 @@
+import CallToAction from "./sections/call-to-action";
 import FeaturesSection from "./sections/features";
 import HeroSection from "./sections/hero";
 import PromptComparisonSection from "./sections/prompt-comparison";
@@ -10,6 +11,7 @@ export default function Home() {
       <FeaturesSection />
       <QuickStartSection />
       <PromptComparisonSection />
+      <CallToAction />
     </div>
   );
 }

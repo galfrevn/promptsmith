@@ -11,7 +11,7 @@ import { HeroBackground } from "../components/hero/background";
 const HeroSection = () => (
   <section
     aria-labelledby="hero-title"
-    className="relative flex min-h-screen w-full flex-col items-center justify-center text-center"
+    className="relative flex min-h-screen w-full flex-col items-center justify-center px-6 text-center sm:px-0"
   >
     <div className="relative z-10 space-y-6">
       <HeroBadge
@@ -22,7 +22,7 @@ const HeroSection = () => (
       />
       <BlurFade delay={0.5}>
         <h1
-          className="font-medium font-sans text-7xl tracking-tighter"
+          className="font-medium font-sans text-4xl tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl"
           id="hero-title"
         >
           The smartest way to craft <br />
@@ -30,7 +30,7 @@ const HeroSection = () => (
         </h1>
       </BlurFade>
       <BlurFade delay={0.8}>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+        <p className="mx-auto max-w-md text-muted-foreground sm:max-w-lg md:max-w-xl md:text-md lg:max-w-2xl lg:text-lg">
           Promptsmith is your all-in-one workspace to design, refine and manage
           prompts, helping teams build smarter, faster and with clarity.
         </p>

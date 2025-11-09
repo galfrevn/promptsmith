@@ -6,7 +6,7 @@ import ComparisonCard from "./comparison-card";
 
 const CodeComparison = () => (
   <BlurFade delay={1} inView>
-    <div className="flex w-full justify-between gap-24">
+    <div className="flex w-full flex-col justify-between gap-24 md:flex-row">
       <ComparisonCard
         code={before.code}
         icon={<PrompsmithIcons.Close className="size-3" />}

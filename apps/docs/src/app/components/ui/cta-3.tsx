@@ -40,10 +40,10 @@ export function CallToActionBanner({ title, text }: CallToActionBannerProps) {
         <p className="text-center text-md text-muted-foreground">{text}</p>
       </div>
 
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
         <Button
           asChild
-          className="rounded-sm bg-foreground/90 text-black backdrop-blur-2xl"
+          className="w-full rounded-sm bg-foreground/90 text-black backdrop-blur-2xl sm:w-auto"
         >
           <a href="https://www.npmjs.com/package/promptsmith-ts">Get started</a>
         </Button>

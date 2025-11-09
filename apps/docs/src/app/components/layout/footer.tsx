@@ -22,17 +22,16 @@ const links = [
 
 const Footer = () => (
   <motion.footer
-    className="mt-16 flex justify-between border-muted border-t bg-black px-12 py-6"
+    className="mt-16 flex flex-col justify-between border-muted border-t bg-black px-12 py-6 sm:flex-row"
     initial={{ opacity: 0 }}
     transition={{ duration: 1, type: "spring", delay: 0.25 }}
     viewport={{ once: true }}
     whileInView={{ opacity: 1 }}
   >
     <p className="text-muted-foreground text-sm">
-      {" "}
       &copy; {new Date().getFullYear()} Promptsmith. All rights reserved.
     </p>
-    <ul className="flex items-center gap-6">
+    <ul className="mt-4 flex items-center gap-6 sm:mt-0">
       {links.map((link) => (
         <li
           className="transition-colors duration-200 hover:text-muted-foreground"

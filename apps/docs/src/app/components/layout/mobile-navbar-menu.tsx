@@ -11,7 +11,9 @@ import { menuItems } from "./navbar";
 export const MobileNavbarMenu = () => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
-      <PrompsmithIcons.Menu />
+      <span>
+        <PrompsmithIcons.Menu />
+      </span>
     </DropdownMenuTrigger>
     <DropdownMenuContent className="mt-2 ml-10 w-40 bg-background px-4 py-4">
       <DropdownMenuRadioGroup>

@@ -4,8 +4,9 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import { PrompsmithIcons } from "@/components/icons";
+import { MobileNavbarMenu } from "./mobile-navbar-menu";
 
-const menuItems = [
+export const menuItems = [
   { id: 1, name: "Features", href: "#features" },
   { id: 2, name: "Quick Start", href: "#quick-start" },
   { id: 3, name: "Docs", href: "https://github.com/galfrevn/promptsmith" },
@@ -19,6 +20,9 @@ export const Navbar = () => (
     whileInView={{ opacity: 1.5, backdropFilter: "blur(0px)" }}
   >
     <nav className="flex w-full items-center justify-between px-12 py-4">
+      <div className="flex md:hidden">
+        <MobileNavbarMenu />
+      </div>
       <Link
         className="flex items-center gap-4 transition-transform duration-300 hover:rotate-6 hover:scale-105 hover:opacity-95"
         href={"/"}
@@ -52,8 +56,8 @@ export const Navbar = () => (
         rel="noopener"
         target="_blank"
       >
-        <PrompsmithIcons.Github size={18} />
-        Github
+        <PrompsmithIcons.Github className="size-6 md:size-5" />
+        <span className="hidden md:flex">Github</span>
       </a>
     </nav>
   </motion.header>

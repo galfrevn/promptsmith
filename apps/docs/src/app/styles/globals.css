@@ -123,4 +123,10 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-background);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }

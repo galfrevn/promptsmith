@@ -5,6 +5,7 @@ import {
   RiFlashlightLine,
   RiGitBranchLine,
   RiGithubLine,
+  RiMenuLine,
   RiPuzzleLine,
 } from "@remixicon/react";
 
@@ -16,4 +17,5 @@ export const PrompsmithIcons = {
   GitBranch: RiGitBranchLine,
   Close: RiCloseLargeLine,
   Check: RiCheckLine,
+  Menu: RiMenuLine,
 };

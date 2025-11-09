@@ -11,7 +11,7 @@ import { HeroBackground } from "../components/hero/background";
 const HeroSection = () => (
   <section
     aria-labelledby="hero-title"
-    className="relative flex min-h-screen w-full flex-col items-center justify-center px-6 text-center sm:px-0"
+    className="relative flex min-h-screen w-full flex-col items-center justify-center text-center"
   >
     <div className="relative z-10 space-y-6">
       <HeroBadge

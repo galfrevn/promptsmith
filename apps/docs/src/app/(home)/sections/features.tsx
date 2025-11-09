@@ -12,7 +12,7 @@ const FeaturesSection = () => (
     id="features"
   >
     <div className="@container mx-auto max-w-5xl px-6">
-      <div className="flex w-full px-12 text-start">
+      <div className="w-full text-start lg:flex lg:px-12">
         <BlurFade delay={0.5} inView>
           <h2
             className="text-balance font-normal text-4xl tracking-normal lg:text-5xl"
@@ -30,9 +30,10 @@ const FeaturesSection = () => (
       </div>
 
       <BlurFade delay={0.5} inView>
-        <div className="mx-auto mt-8 grid @min-4xl:max-w-full max-w-sm @min-4xl:grid-cols-3 gap-6 *:text-center md:mt-16">
+        <div className="mx-auto mt-8 grid w-full place-items-center gap-6 *:text-center sm:grid-cols-1 md:mt-16 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <motion.article
+              className="w-full"
               initial={{ opacity: 0, y: 10 }}
               key={feature.id}
               transition={{ duration: 1, type: "tween", delay: index }}

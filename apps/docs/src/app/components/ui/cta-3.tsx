@@ -1,7 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { PrompsmithIcons } from "../icons";
+import { PromptsmithIcons } from "../icons";
 
 type CallToActionBannerProps = {
   title: string;
@@ -52,7 +52,11 @@ export function CallToActionBanner({ title, text }: CallToActionBannerProps) {
           className="flex items-center gap-2 rounded-sm border border-primary bg-transparent transition-colors duration-300 hover:bg-foreground/10"
         >
           <Link href="https://github.com/galfrevn/promptsmith">
-            View docs <PrompsmithIcons.ArrowRight className="size-4" />
+            View docs{" "}
+            <PromptsmithIcons.ArrowRight
+              aria-hidden="true"
+              className="size-4"
+            />
           </Link>
         </Button>
       </div>

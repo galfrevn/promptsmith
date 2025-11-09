@@ -10,7 +10,7 @@ const links = [
   },
   {
     id: 2,
-    text: "Githbub",
+    text: "GitHub",
     href: "https://github.com/galfrevn/promptsmith",
   },
   {
@@ -31,18 +31,20 @@ const Footer = () => (
     <p className="text-muted-foreground text-sm">
       &copy; {new Date().getFullYear()} Promptsmith. All rights reserved.
     </p>
-    <ul className="mt-4 flex items-center gap-6 sm:mt-0">
-      {links.map((link) => (
-        <li
-          className="transition-colors duration-200 hover:text-muted-foreground"
-          key={link.id}
-        >
-          <a href={link.href} target="_blank">
-            {link.text}
-          </a>
-        </li>
-      ))}
-    </ul>
+    <nav>
+      <ul className="mt-4 flex items-center gap-6 sm:mt-0">
+        {links.map((link) => (
+          <li
+            className="transition-colors duration-200 hover:text-muted-foreground"
+            key={link.id}
+          >
+            <a href={link.href} target="_blank">
+              {link.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   </motion.footer>
 );
 

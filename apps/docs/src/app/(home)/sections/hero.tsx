@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import Link from "next/link";
-import { PrompsmithIcons } from "@/components/icons";
+import { PromptsmithIcons } from "@/components/icons";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
 import HeroBadge from "@/components/ui/hero-badge";
@@ -17,7 +16,9 @@ const HeroSection = () => (
       <HeroBadge
         className="mb-6 backdrop-blur-xl"
         href="/docs"
-        icon={<PrompsmithIcons.Flashlight className="size-4" />}
+        icon={
+          <PromptsmithIcons.Flashlight aria-hidden="true" className="size-4" />
+        }
         text="New! Built for creators & developers"
       />
       <BlurFade delay={0.5}>
@@ -36,8 +37,10 @@ const HeroSection = () => (
         </p>
       </BlurFade>
       <motion.div
+        aria-label="Actions button hero"
         className="flex items-center space-x-4 justify-self-center"
         initial={{ opacity: 0, backdropFilter: "blur(20px)", y: 10 }}
+        role="group"
         transition={{ duration: 1.5, type: "spring", delay: 1 }}
         viewport={{ once: true }}
         whileInView={{ opacity: 1, backdropFilter: "blur(0px)", y: 0 }}
@@ -46,15 +49,27 @@ const HeroSection = () => (
           asChild
           className="rounded-sm bg-foreground/90 text-black backdrop-blur-2xl"
         >
-          <a href="https://www.npmjs.com/package/promptsmith-ts">Get started</a>
+          <a
+            href="https://www.npmjs.com/package/promptsmith-ts"
+            rel="noopener noreferrer"
+          >
+            Get started
+          </a>
         </Button>
         <Button
           asChild
           className="flex items-center gap-2 rounded-sm border border-primary bg-transparent transition-colors duration-300 hover:bg-foreground/10"
         >
-          <Link href="https://github.com/galfrevn/promptsmith">
-            View docs <PrompsmithIcons.ArrowRight className="size-4" />
-          </Link>
+          <a
+            href="https://github.com/galfrevn/promptsmith"
+            rel="noopener noreferrer"
+          >
+            View docs{" "}
+            <PromptsmithIcons.ArrowRight
+              aria-hidden="true"
+              className="size-4"
+            />
+          </a>
         </Button>
       </motion.div>
     </div>

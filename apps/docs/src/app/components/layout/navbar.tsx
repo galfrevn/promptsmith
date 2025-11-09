@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
-import { PrompsmithIcons } from "@/components/icons";
+import { PromptsmithIcons } from "@/components/icons";
 import { MobileNavbarMenu } from "./mobile-navbar-menu";
 
 export const menuItems = [
@@ -56,7 +56,10 @@ export const Navbar = () => (
         rel="noopener"
         target="_blank"
       >
-        <PrompsmithIcons.Github className="size-6 md:size-5" />
+        <PromptsmithIcons.Github
+          aria-hidden="true"
+          className="size-6 md:size-5"
+        />
         <span className="hidden md:flex">Github</span>
       </a>
     </nav>

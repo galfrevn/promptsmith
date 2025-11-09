@@ -1,5 +1,5 @@
 import { after, before } from "@/(home)/utils/comparison";
-import { PrompsmithIcons } from "@/components/icons";
+import { PromptsmithIcons } from "@/components/icons";
 import { BGPattern } from "@/components/ui/bg-pattern";
 import { BlurFade } from "@/components/ui/blur-fade";
 import ComparisonCard from "./comparison-card";
@@ -9,14 +9,14 @@ const CodeComparison = () => (
     <div className="flex w-full flex-col justify-between gap-24 md:flex-row">
       <ComparisonCard
         code={before.code}
-        icon={<PrompsmithIcons.Close className="size-3" />}
+        icon={<PromptsmithIcons.Close aria-hidden="true" className="size-3" />}
         items={before.desadvantages}
         title={before.title}
       />
 
       <ComparisonCard
         code={after.code}
-        icon={<PrompsmithIcons.Check className="size-3" />}
+        icon={<PromptsmithIcons.Check aria-hidden="true" className="size-3" />}
         items={after.advantages}
         title={after.title}
       />

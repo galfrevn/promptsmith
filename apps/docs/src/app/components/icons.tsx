@@ -9,7 +9,7 @@ import {
   RiPuzzleLine,
 } from "@remixicon/react";
 
-export const PrompsmithIcons = {
+export const PromptsmithIcons = {
   Github: RiGithubLine,
   Flashlight: RiFlashlightLine,
   ArrowRight: RiArrowRightLine,

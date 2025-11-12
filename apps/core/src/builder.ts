@@ -1,3 +1,4 @@
+import { PromptCache } from "./cache";
 import { parseZodSchema } from "./schemas";
 import type {
   AiSdkConfig,
@@ -5,8 +6,14 @@ import type {
   ConstraintType,
   Example,
   ExecutableToolDefinition,
+  MastraToolDefinition,
   PromptFormat,
 } from "./types";
+import {
+  PromptValidator,
+  type ValidationResult,
+  type ValidatorConfig,
+} from "./validation";
 
 /**
  * Regex patterns for TOON format parsing
@@ -78,6 +85,74 @@ export class SystemPromptBuilder {
   private readonly _examples: Example[] = [];
   private _errorHandling = "";
   private _format: PromptFormat = "markdown";
+  private readonly _cache = new PromptCache();
+  private _validatorConfig?: ValidatorConfig;
+
+  /**
+   * Type guard to check if a tool definition is from Mastra.
+   *
+   * Detects Mastra tools by checking for Mastra-specific properties (`id`, `inputSchema`)
+   * and ensuring PromptSmith properties (`name`, `schema`) are absent.
+   *
+   * @param tool - The tool definition to check
+   * @returns True if the tool is a Mastra tool, false otherwise
+   */
+  private isMastraTool(
+    tool:
+      | ExecutableToolDefinition
+      | MastraToolDefinition
+      | Record<string, unknown>
+  ): tool is MastraToolDefinition {
+    if (!tool || typeof tool !== "object") {
+      return false;
+    }
+
+    // Check for Mastra-specific properties
+    const hasMastraSignature =
+      "id" in tool &&
+      typeof tool.id === "string" &&
+      "inputSchema" in tool &&
+      "description" in tool &&
+      typeof tool.description === "string";
+
+    // Ensure it's NOT a PromptSmith tool
+    const isNotPromptSmithTool = !("name" in tool && "schema" in tool);
+
+    return hasMastraSignature && isNotPromptSmithTool;
+  }
+
+  /**
+   * Converts a Mastra tool definition to PromptSmith format.
+   *
+   * Transforms Mastra's tool structure to PromptSmith's internal format:
+   * - `id` → `name`
+   * - `inputSchema` → `schema`
+   * - Adapts `execute` function signature from `{ context, ... }` to direct params
+   *
+   * @param mastraTool - The Mastra tool to convert
+   * @returns A PromptSmith-compatible tool definition
+   */
+  private convertMastraToolToPromptSmith(
+    mastraTool: MastraToolDefinition
+  ): ExecutableToolDefinition {
+    return {
+      name: mastraTool.id,
+      description: mastraTool.description,
+      schema: mastraTool.inputSchema,
+      execute: mastraTool.execute
+        ? async (params: unknown) => {
+            // Adapt PromptSmith's direct params to Mastra's { context } signature
+            // biome-ignore lint/style/noNonNullAssertion: execute is checked above
+            return await mastraTool.execute!({
+              context: params,
+              runtimeContext: undefined,
+              tracingContext: undefined,
+              abortSignal: undefined,
+            });
+          }
+        : undefined,
+    };
+  }
 
   /**
    * Sets the agent's core identity or purpose.
@@ -102,6 +177,7 @@ export class SystemPromptBuilder {
    */
   withIdentity(text: string): this {
     this._identity = text;
+    this._cache.invalidate();
     return this;
   }
 
@@ -128,6 +204,7 @@ export class SystemPromptBuilder {
   withCapability(cap: string): this {
     if (cap) {
       this._capabilities.push(cap);
+      this._cache.invalidate();
     }
     return this;
   }
@@ -155,12 +232,16 @@ export class SystemPromptBuilder {
    * ```
    */
   withCapabilities(caps: string[]): this {
-    this._capabilities.push(...caps.filter((c) => c));
+    const filtered = caps.filter((c) => c);
+    this._capabilities.push(...filtered);
+    if (filtered.length > 0) {
+      this._cache.invalidate();
+    }
     return this;
   }
 
   /**
-   * Registers a tool that the agent can use.
+   * Registers a tool that the agent can use (PromptSmith format).
    *
    * Tools are external functions or APIs that the agent can invoke to perform
    * actions or retrieve information. This method registers the tool's
@@ -174,7 +255,7 @@ export class SystemPromptBuilder {
    * When provided, the tool can be exported directly to AI SDK format.
    *
    * @template T - The Zod schema type for the tool's parameters
-   * @param def - Tool definition containing name, description, parameter schema, and optionally an execute function
+   * @param def - Tool definition in PromptSmith format
    *
    * @returns The builder instance for method chaining
    *
@@ -189,13 +270,17 @@ export class SystemPromptBuilder {
    *   })
    * });
    *
-   * // With execution logic
+   * // With execution logic - full type inference
    * builder.withTool({
    *   name: "get_weather",
    *   description: "Get current weather",
-   *   schema: z.object({ location: z.string() }),
-   *   execute: async ({ location }) => {
-   *     const response = await fetch(`https://api.weather.com/${location}`);
+   *   schema: z.object({
+   *     location: z.string(),
+   *     units: z.enum(["celsius", "fahrenheit"])
+   *   }),
+   *   execute: async ({ location, units }) => {
+   *     // ✅ TypeScript infers: location is string, units is "celsius" | "fahrenheit"
+   *     const response = await fetch(`https://api.weather.com/${location}?units=${units}`);
    *     return response.json();
    *   }
    * });
@@ -203,8 +288,51 @@ export class SystemPromptBuilder {
    */
   withTool<T extends import("zod").ZodType>(
     def: ExecutableToolDefinition<T>
+  ): this;
+
+  /**
+   * Registers a tool created with Mastra's `createTool()` function.
+   *
+   * This overload automatically detects and converts tools from Mastra's format
+   * to PromptSmith's internal format, enabling seamless interoperability between
+   * the two frameworks.
+   *
+   * @param def - Tool definition in Mastra format (created with `createTool()`)
+   *
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * import { createTool } from "@mastra/core/tools";
+   *
+   * const weatherTool = createTool({
+   *   id: "weather-tool",
+   *   description: "Get weather",
+   *   inputSchema: z.object({ location: z.string() }),
+   *   execute: async ({ context }) => fetchWeather(context.location)
+   * });
+   *
+   * builder.withTool(weatherTool); // Automatically converted!
+   * ```
+   */
+  withTool(def: MastraToolDefinition): this;
+
+  /**
+   * Implementation signature for withTool overloads.
+   * @internal
+   */
+  withTool<T extends import("zod").ZodType>(
+    def: ExecutableToolDefinition<T> | MastraToolDefinition
   ): this {
-    this._tools.push(def);
+    // Check if this is a Mastra tool and convert it
+    if (this.isMastraTool(def)) {
+      const converted = this.convertMastraToolToPromptSmith(def);
+      this._tools.push(converted);
+    } else {
+      this._tools.push(def as ExecutableToolDefinition<T>);
+    }
+
+    this._cache.invalidate();
     return this;
   }
 
@@ -231,6 +359,48 @@ export class SystemPromptBuilder {
    */
   withTools(defs: ExecutableToolDefinition[]): this {
     this._tools.push(...defs);
+    if (defs.length > 0) {
+      this._cache.invalidate();
+    }
+    return this;
+  }
+
+  /**
+   * Conditionally registers a tool based on a condition.
+   *
+   * This method only adds the tool if the condition evaluates to true,
+   * making it easier to build prompts with conditional tool availability
+   * without breaking the fluent chain.
+   *
+   * @param condition - Boolean condition that determines if the tool is added
+   * @param def - Tool definition containing name, description, parameter schema, and optionally an execute function
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const hasDatabase = config.databaseEnabled;
+   * const hasExternalApi = config.apiKey !== null;
+   *
+   * builder
+   *   .withToolIf(hasDatabase, {
+   *     name: "query_db",
+   *     description: "Query the database",
+   *     schema: z.object({ query: z.string() }),
+   *     execute: async ({ query }) => await db.execute(query)
+   *   })
+   *   .withToolIf(hasExternalApi, {
+   *     name: "fetch_external_data",
+   *     description: "Fetch data from external API",
+   *     schema: z.object({ endpoint: z.string() }),
+   *     execute: async ({ endpoint }) => await api.fetch(endpoint)
+   *   });
+   * ```
+   */
+  withToolIf(condition: boolean, def: ExecutableToolDefinition): this {
+    if (condition) {
+      this._tools.push(def);
+      this._cache.invalidate();
+    }
     return this;
   }
 
@@ -267,6 +437,80 @@ export class SystemPromptBuilder {
   withConstraint(type: ConstraintType, rule: string): this {
     if (rule) {
       this._constraints.push({ type, rule });
+      this._cache.invalidate();
+    }
+    return this;
+  }
+
+  /**
+   * Adds one or more behavioral constraints with the same type.
+   *
+   * This overloaded method accepts either a single constraint rule or an array of rules,
+   * making it more convenient to add multiple constraints of the same type.
+   *
+   * @param type - The constraint severity level
+   * @param rules - Single rule string or array of rule strings
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * // Single constraint
+   * builder.withConstraints("must", "Always verify user authentication");
+   *
+   * // Multiple constraints
+   * builder.withConstraints("must", [
+   *   "Always verify user authentication",
+   *   "Log all data access attempts",
+   *   "Use encrypted connections"
+   * ]);
+   * ```
+   */
+  withConstraints(type: ConstraintType, rules: string | string[]): this {
+    const ruleArray = Array.isArray(rules) ? rules : [rules];
+    let added = false;
+    for (const rule of ruleArray) {
+      if (rule) {
+        this._constraints.push({ type, rule });
+        added = true;
+      }
+    }
+    if (added) {
+      this._cache.invalidate();
+    }
+    return this;
+  }
+
+  /**
+   * Conditionally adds a behavioral constraint based on a condition.
+   *
+   * This method only adds the constraint if the condition evaluates to true,
+   * making it easier to build prompts with conditional logic without breaking
+   * the fluent chain.
+   *
+   * @param condition - Boolean condition that determines if the constraint is added
+   * @param type - The constraint severity level
+   * @param rule - The constraint rule text
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const isProd = process.env.NODE_ENV === 'production';
+   * const hasAuth = config.authEnabled;
+   *
+   * builder
+   *   .withConstraintIf(isProd, "must", "Log all security events")
+   *   .withConstraintIf(hasAuth, "must", "Verify user identity before data access")
+   *   .withConstraintIf(!isProd, "should", "Provide verbose debug information");
+   * ```
+   */
+  withConstraintIf(
+    condition: boolean,
+    type: ConstraintType,
+    rule: string
+  ): this {
+    if (condition && rule) {
+      this._constraints.push({ type, rule });
+      this._cache.invalidate();
     }
     return this;
   }
@@ -300,6 +544,7 @@ export class SystemPromptBuilder {
    */
   withOutput(format: string): this {
     this._outputFormat = format;
+    this._cache.invalidate();
     return this;
   }
 
@@ -327,6 +572,7 @@ export class SystemPromptBuilder {
    */
   withTone(tone: string): this {
     this._tone = tone;
+    this._cache.invalidate();
     return this;
   }
 
@@ -379,6 +625,7 @@ export class SystemPromptBuilder {
    */
   withGuardrails(): this {
     this._guardrailsEnabled = true;
+    this._cache.invalidate();
     return this;
   }
 
@@ -428,7 +675,11 @@ export class SystemPromptBuilder {
    * ```
    */
   withForbiddenTopics(topics: string[]): this {
-    this._forbiddenTopics.push(...topics.filter((t) => t));
+    const filtered = topics.filter((t) => t);
+    this._forbiddenTopics.push(...filtered);
+    if (filtered.length > 0) {
+      this._cache.invalidate();
+    }
     return this;
   }
 
@@ -491,6 +742,7 @@ export class SystemPromptBuilder {
    */
   withContext(text: string): this {
     this._context = text;
+    this._cache.invalidate();
     return this;
   }
 
@@ -555,6 +807,9 @@ export class SystemPromptBuilder {
     );
 
     this._examples.push(...validExamples);
+    if (validExamples.length > 0) {
+      this._cache.invalidate();
+    }
     return this;
   }
 
@@ -612,6 +867,7 @@ export class SystemPromptBuilder {
    */
   withErrorHandling(instructions: string): this {
     this._errorHandling = instructions;
+    this._cache.invalidate();
     return this;
   }
 
@@ -667,6 +923,7 @@ export class SystemPromptBuilder {
    */
   withFormat(format: PromptFormat): this {
     this._format = format;
+    this._cache.invalidate();
     return this;
   }
 
@@ -843,6 +1100,464 @@ export class SystemPromptBuilder {
   }
 
   /**
+   * Checks if any tools have been registered with the builder.
+   *
+   * @returns True if at least one tool is registered, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder()
+   *   .withIdentity("Assistant");
+   *
+   * console.log(builder.hasTools()); // false
+   *
+   * builder.withTool({
+   *   name: "search",
+   *   description: "Search the web",
+   *   schema: z.object({ query: z.string() })
+   * });
+   *
+   * console.log(builder.hasTools()); // true
+   * ```
+   */
+  hasTools(): boolean {
+    return this._tools.length > 0;
+  }
+
+  /**
+   * Checks if any constraints have been added to the builder.
+   *
+   * @returns True if at least one constraint exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder()
+   *   .withIdentity("Assistant");
+   *
+   * console.log(builder.hasConstraints()); // false
+   *
+   * builder.withConstraint("must", "Verify user identity");
+   *
+   * console.log(builder.hasConstraints()); // true
+   * ```
+   */
+  hasConstraints(): boolean {
+    return this._constraints.length > 0;
+  }
+
+  /**
+   * Returns all constraints of a specific type.
+   *
+   * Filters and returns constraints matching the specified severity level.
+   * Useful for inspecting or validating specific constraint types.
+   *
+   * @param type - The constraint type to filter by
+   * @returns An array of constraints matching the specified type
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder()
+   *   .withConstraint("must", "Always log access")
+   *   .withConstraint("must", "Verify authentication")
+   *   .withConstraint("should", "Provide helpful errors")
+   *   .withConstraint("must_not", "Never expose secrets");
+   *
+   * const musts = builder.getConstraintsByType("must");
+   * console.log(musts.length); // 2
+   * console.log(musts[0].rule); // "Always log access"
+   *
+   * const mustNots = builder.getConstraintsByType("must_not");
+   * console.log(mustNots.length); // 1
+   * ```
+   */
+  getConstraintsByType(type: ConstraintType): Constraint[] {
+    return this._constraints.filter((c) => c.type === type);
+  }
+
+  /**
+   * Checks if an identity has been set for the builder.
+   *
+   * @returns True if identity is set (non-empty string), false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder();
+   * console.log(builder.hasIdentity()); // false
+   *
+   * builder.withIdentity("You are a helpful assistant");
+   * console.log(builder.hasIdentity()); // true
+   * ```
+   */
+  hasIdentity(): boolean {
+    return this._identity.length > 0;
+  }
+
+  /**
+   * Checks if any capabilities have been added to the builder.
+   *
+   * @returns True if at least one capability exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder();
+   * console.log(builder.hasCapabilities()); // false
+   *
+   * builder.withCapability("Answer questions");
+   * console.log(builder.hasCapabilities()); // true
+   * ```
+   */
+  hasCapabilities(): boolean {
+    return this._capabilities.length > 0;
+  }
+
+  /**
+   * Checks if examples have been added to the builder.
+   *
+   * @returns True if at least one example exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder();
+   * console.log(builder.hasExamples()); // false
+   *
+   * builder.withExamples([
+   *   { user: "Hello", assistant: "Hi there!" }
+   * ]);
+   * console.log(builder.hasExamples()); // true
+   * ```
+   */
+  hasExamples(): boolean {
+    return this._examples.length > 0;
+  }
+
+  /**
+   * Checks if guardrails have been enabled.
+   *
+   * @returns True if guardrails are enabled, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder();
+   * console.log(builder.hasGuardrails()); // false
+   *
+   * builder.withGuardrails();
+   * console.log(builder.hasGuardrails()); // true
+   * ```
+   */
+  hasGuardrails(): boolean {
+    return this._guardrailsEnabled;
+  }
+
+  /**
+   * Checks if any forbidden topics have been specified.
+   *
+   * @returns True if at least one forbidden topic exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder();
+   * console.log(builder.hasForbiddenTopics()); // false
+   *
+   * builder.withForbiddenTopics(["Medical advice"]);
+   * console.log(builder.hasForbiddenTopics()); // true
+   * ```
+   */
+  hasForbiddenTopics(): boolean {
+    return this._forbiddenTopics.length > 0;
+  }
+
+  /**
+   * Returns a summary of the builder's current state.
+   *
+   * Provides a quick overview of what has been configured, useful for
+   * debugging, logging, or validation purposes.
+   *
+   * @returns An object containing counts and flags for all builder sections
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder()
+   *   .withIdentity("Assistant")
+   *   .withCapabilities(["Answer questions", "Provide help"])
+   *   .withTool({ name: "search", description: "Search", schema: z.object({}) })
+   *   .withConstraint("must", "Be helpful")
+   *   .withGuardrails();
+   *
+   * const summary = builder.getSummary();
+   * console.log(summary);
+   * // {
+   * //   hasIdentity: true,
+   * //   capabilitiesCount: 2,
+   * //   toolsCount: 1,
+   * //   constraintsCount: 1,
+   * //   examplesCount: 0,
+   * //   hasGuardrails: true,
+   * //   forbiddenTopicsCount: 0,
+   * //   hasContext: false,
+   * //   hasTone: false,
+   * //   hasOutputFormat: false,
+   * //   hasErrorHandling: false,
+   * //   format: 'markdown'
+   * // }
+   * ```
+   */
+  getSummary(): {
+    hasIdentity: boolean;
+    capabilitiesCount: number;
+    toolsCount: number;
+    constraintsCount: number;
+    constraintsByType: {
+      must: number;
+      must_not: number;
+      should: number;
+      should_not: number;
+    };
+    examplesCount: number;
+    hasGuardrails: boolean;
+    forbiddenTopicsCount: number;
+    hasContext: boolean;
+    hasTone: boolean;
+    hasOutputFormat: boolean;
+    hasErrorHandling: boolean;
+    format: PromptFormat;
+  } {
+    return {
+      hasIdentity: this.hasIdentity(),
+      capabilitiesCount: this._capabilities.length,
+      toolsCount: this._tools.length,
+      constraintsCount: this._constraints.length,
+      constraintsByType: {
+        must: this.getConstraintsByType("must").length,
+        must_not: this.getConstraintsByType("must_not").length,
+        should: this.getConstraintsByType("should").length,
+        should_not: this.getConstraintsByType("should_not").length,
+      },
+      examplesCount: this._examples.length,
+      hasGuardrails: this.hasGuardrails(),
+      forbiddenTopicsCount: this._forbiddenTopics.length,
+      hasContext: this._context.length > 0,
+      hasTone: this._tone.length > 0,
+      hasOutputFormat: this._outputFormat.length > 0,
+      hasErrorHandling: this._errorHandling.length > 0,
+      format: this._format,
+    };
+  }
+
+  /**
+   * Outputs detailed debug information about the builder's current state.
+   *
+   * This method provides comprehensive logging of the builder's configuration,
+   * including all sections, counts, warnings, and suggestions for improvement.
+   * Useful for debugging, development, and understanding how the prompt will
+   * be structured.
+   *
+   * The debug output includes:
+   * - Configuration summary with counts
+   * - Detailed section breakdowns
+   * - Validation warnings (missing sections, potential issues)
+   * - Suggestions for completeness
+   * - Preview of the first 500 characters of the built prompt
+   *
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder()
+   *   .withIdentity("Assistant")
+   *   .withCapabilities(["Answer questions", "Provide help"])
+   *   .withTool({ name: "search", description: "Search", schema: z.object({}) })
+   *   .debug(); // Logs detailed information to console
+   *
+   * // Continue chaining after debug
+   * const prompt = builder
+   *   .debug()
+   *   .withConstraint("must", "Be helpful")
+   *   .build();
+   * ```
+   */
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Debug output requires detailed inspection
+  debug(): this {
+    const summary = this.getSummary();
+    const lines: string[] = [];
+    const PREVIEW_LENGTH = 200;
+    const CHARS_PER_TOKEN = 4;
+    const IDENTITY_PREVIEW_LENGTH = 60;
+    const PERCENT_MULTIPLIER = 100;
+
+    // Configuration Summary
+    lines.push("PromptSmith Builder Debug");
+    lines.push("");
+    lines.push(
+      `Format: ${summary.format} | Identity: ${summary.hasIdentity ? "✓" : "✗"} | Capabilities: ${summary.capabilitiesCount} | Tools: ${summary.toolsCount}`
+    );
+    lines.push(
+      `Constraints: ${summary.constraintsCount} (must: ${summary.constraintsByType.must}, must_not: ${summary.constraintsByType.must_not}, should: ${summary.constraintsByType.should}, should_not: ${summary.constraintsByType.should_not})`
+    );
+    lines.push(
+      `Examples: ${summary.examplesCount} | Guardrails: ${summary.hasGuardrails ? "✓" : "✗"} | Forbidden Topics: ${summary.forbiddenTopicsCount}`
+    );
+
+    // Detailed Sections
+    if (this._identity) {
+      lines.push("");
+      lines.push(
+        `Identity: "${this._identity.substring(0, IDENTITY_PREVIEW_LENGTH)}${this._identity.length > IDENTITY_PREVIEW_LENGTH ? "..." : ""}"`
+      );
+    }
+
+    if (this._capabilities.length > 0) {
+      lines.push("");
+      lines.push(`Capabilities (${this._capabilities.length}):`);
+      for (const [i, cap] of this._capabilities.entries()) {
+        lines.push(`  ${i + 1}. ${cap}`);
+      }
+    }
+
+    if (this._tools.length > 0) {
+      lines.push("");
+      lines.push(`Tools (${this._tools.length}):`);
+      for (const tool of this._tools) {
+        const hasExecute = tool.execute !== undefined;
+        lines.push(
+          `  - ${tool.name}${hasExecute ? " [executable]" : " [doc-only]"}`
+        );
+      }
+    }
+
+    // Validation & Warnings
+    const warnings: string[] = [];
+    const suggestions: string[] = [];
+
+    if (!this.hasIdentity()) {
+      warnings.push("No identity set");
+    }
+
+    if (!this.hasCapabilities()) {
+      suggestions.push("Add capabilities");
+    }
+
+    if (!this.hasConstraints()) {
+      suggestions.push("Add behavioral constraints");
+    }
+
+    if (this.hasTools() && !this.hasExamples()) {
+      suggestions.push("Add tool usage examples");
+    }
+
+    if (
+      this.hasConstraints() &&
+      this.getConstraintsByType("must").length === 0
+    ) {
+      suggestions.push("Add critical 'must' constraints");
+    }
+
+    if (!this.hasGuardrails() && this.hasTools()) {
+      suggestions.push("Enable security guardrails");
+    }
+
+    if (warnings.length > 0 || suggestions.length > 0) {
+      lines.push("");
+      if (warnings.length > 0) {
+        lines.push(`Warnings: ${warnings.join(", ")}`);
+      }
+      if (suggestions.length > 0) {
+        lines.push(`Suggestions: ${suggestions.join(", ")}`);
+      }
+    }
+
+    // Preview & Size
+    const promptPreview = this.build().substring(0, PREVIEW_LENGTH);
+    const promptLength = this.build().length;
+    const estimatedTokens = Math.ceil(promptLength / CHARS_PER_TOKEN);
+
+    lines.push("");
+    lines.push(`Preview: ${promptPreview.replace(/\n/g, " ")}...`);
+    lines.push(`Size: ${promptLength} chars (~${estimatedTokens} tokens)`);
+
+    if (this._format === "markdown") {
+      const toonLength = this.build("toon").length;
+      const savingsPercent = Math.round(
+        ((promptLength - toonLength) / promptLength) * PERCENT_MULTIPLIER
+      );
+      lines.push(
+        `TOON format: ${toonLength} chars (~${Math.ceil(toonLength / CHARS_PER_TOKEN)} tokens) - saves ${savingsPercent}%`
+      );
+    }
+
+    // biome-ignore lint/suspicious/noConsole: Debug method intentionally uses console
+    console.log(lines.join("\n"));
+
+    return this;
+  }
+
+  /**
+   * Validates the current builder configuration.
+   *
+   * Runs a comprehensive validation check on the builder state and returns
+   * detailed information about errors, warnings, and suggestions. This is
+   * useful for catching configuration issues before building the prompt.
+   *
+   * @param config - Optional validator configuration to customize validation rules
+   * @returns A ValidationResult object containing validation status and issues
+   *
+   * @example
+   * ```typescript
+   * const builder = createPromptBuilder()
+   *   .withIdentity("Customer service agent")
+   *   .withCapability("Answer questions");
+   *
+   * const result = builder.validate();
+   *
+   * if (!result.valid) {
+   *   console.error("Validation errors:", result.errors);
+   * }
+   *
+   * if (result.warnings.length > 0) {
+   *   console.warn("Validation warnings:", result.warnings);
+   * }
+   * ```
+   */
+  validate(config?: ValidatorConfig): ValidationResult {
+    const validator = new PromptValidator(config || this._validatorConfig);
+    return validator.validate({
+      identity: this._identity,
+      capabilities: this._capabilities,
+      tools: this._tools,
+      constraints: this._constraints,
+      examples: this._examples,
+      guardrailsEnabled: this._guardrailsEnabled,
+      forbiddenTopics: this._forbiddenTopics,
+      context: this._context,
+      tone: this._tone,
+      outputFormat: this._outputFormat,
+      errorHandling: this._errorHandling,
+    });
+  }
+
+  /**
+   * Sets the default validator configuration for this builder.
+   *
+   * This configuration will be used when calling `validate()` without arguments.
+   *
+   * @param config - Validator configuration
+   * @returns The builder instance for method chaining
+   *
+   * @example
+   * ```typescript
+   * builder
+   *   .withValidatorConfig({
+   *     checkDuplicateTools: true,
+   *     checkIdentity: false
+   *   })
+   *   .validate(); // Uses the configured validator
+   * ```
+   */
+  withValidatorConfig(config: ValidatorConfig): this {
+    this._validatorConfig = config;
+    return this;
+  }
+
+  /**
    * Exports tools in Vercel AI SDK format.
    *
    * This method converts Promptsmith tool definitions into the format expected
@@ -994,6 +1709,98 @@ export class SystemPromptBuilder {
   }
 
   /**
+   * Exports configuration for Mastra agents.
+   *
+   * This method generates a Mastra-compatible configuration object with the system
+   * prompt as `instructions` and tools converted to Mastra's format. This prevents
+   * tool duplication - define tools once in PromptSmith and they're automatically
+   * converted to both formats.
+   *
+   * The tools are converted to match Mastra's expected structure:
+   * - `name` → `id`
+   * - `schema` → `inputSchema`
+   * - `execute` receives `{ context }` parameter matching Mastra's signature
+   * - Returns an object where keys are tool names (for Mastra's `tools: { toolName }` syntax)
+   *
+   * @returns An object with `instructions` (system prompt) and `tools` (Mastra format object)
+   *
+   * @example
+   * ```typescript
+   * import { Agent } from "@mastra/core/agent";
+   * import { createPromptBuilder } from "promptsmith-ts/builder";
+   * import { z } from "zod";
+   *
+   * const promptBuilder = createPromptBuilder()
+   *   .withIdentity("Weather assistant")
+   *   .withTool({
+   *     name: "weatherTool",
+   *     description: "Get current weather",
+   *     schema: z.object({
+   *       location: z.string(),
+   *     }),
+   *     execute: async ({ location }) => {
+   *       return await fetchWeather(location);
+   *     },
+   *   });
+   *
+   * const { instructions, tools } = promptBuilder.toMastra();
+   *
+   * // Use with Mastra Agent - tools is an object
+   * const agent = new Agent({
+   *   name: "weather-agent",
+   *   instructions,
+   *   model: "openai/gpt-4o",
+   *   tools, // { weatherTool: { id, description, inputSchema, execute } }
+   * });
+   * ```
+   */
+  toMastra(): {
+    instructions: string;
+    tools: Record<
+      string,
+      {
+        id: string;
+        description: string;
+        inputSchema: import("zod").ZodType;
+        outputSchema?: import("zod").ZodType;
+        execute?: (args: { context: unknown }) => Promise<unknown> | unknown;
+      }
+    >;
+  } {
+    const tools: Record<
+      string,
+      {
+        id: string;
+        description: string;
+        inputSchema: import("zod").ZodType;
+        outputSchema?: import("zod").ZodType;
+        execute?: (args: { context: unknown }) => Promise<unknown> | unknown;
+      }
+    > = {};
+
+    for (const tool of this._tools) {
+      tools[tool.name] = {
+        id: tool.name,
+        description: tool.description,
+        inputSchema: tool.schema,
+        outputSchema: undefined, // Optional in Mastra
+        // Wrap execute to match Mastra's { context } signature
+        execute: tool.execute
+          ? async (args: { context: unknown }) => {
+              // biome-ignore lint/style/noNonNullAssertion: execute is checked above
+              return await tool.execute!(args.context);
+            }
+          : undefined,
+      };
+    }
+
+    return {
+      instructions: this.build(),
+      tools,
+    };
+  }
+
+  /**
    * Exports the builder's configuration as a plain JavaScript object.
    *
    * This method serializes the entire builder state into a JSON-compatible
@@ -1079,14 +1886,28 @@ export class SystemPromptBuilder {
    */
   build(format?: PromptFormat): string {
     const targetFormat = format || this._format;
+
+    // Check cache first
+    const cached = this._cache.get(targetFormat);
+    if (cached) {
+      return cached;
+    }
+
+    // Build and cache the prompt
+    let result: string;
     switch (targetFormat) {
       case "toon":
-        return this.buildTOON();
+        result = this.buildTOON();
+        break;
       case "compact":
-        return this.buildCompact();
+        result = this.buildCompact();
+        break;
       default:
-        return this.buildMarkdown();
+        result = this.buildMarkdown();
     }
+
+    this._cache.set(targetFormat, result);
+    return result;
   }
 
   /**

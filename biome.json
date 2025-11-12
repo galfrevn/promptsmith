@@ -20,7 +20,8 @@
       "!**/.svelte-kit",
       "!**/wrangler.jsonc",
       "!**/.source",
-      "!**/examples"
+      "!**/examples",
+      "!**/docs"
     ]
   },
   "extends": ["ultracite/core"],

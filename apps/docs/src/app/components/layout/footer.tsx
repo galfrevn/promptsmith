@@ -1,0 +1,51 @@
+"use client";
+
+import { motion } from "motion/react";
+
+const links = [
+  {
+    id: 1,
+    text: "NPM",
+    href: "https://www.npmjs.com/package/promptsmith-ts",
+  },
+  {
+    id: 2,
+    text: "GitHub",
+    href: "https://github.com/galfrevn/promptsmith",
+  },
+  {
+    id: 3,
+    text: "X",
+    href: "https://x.com/galfrevn",
+  },
+];
+
+const Footer = () => (
+  <motion.footer
+    className="mt-16 flex flex-col justify-between border-muted border-t bg-black px-12 py-6 sm:flex-row"
+    initial={{ opacity: 0 }}
+    transition={{ duration: 1, type: "spring", delay: 0.25 }}
+    viewport={{ once: true }}
+    whileInView={{ opacity: 1 }}
+  >
+    <p className="text-muted-foreground text-sm">
+      &copy; {new Date().getFullYear()} Promptsmith. All rights reserved.
+    </p>
+    <nav>
+      <ul className="mt-4 flex items-center gap-6 sm:mt-0">
+        {links.map((link) => (
+          <li
+            className="transition-colors duration-200 hover:text-muted-foreground"
+            key={link.id}
+          >
+            <a href={link.href} target="_blank">
+              {link.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </motion.footer>
+);
+
+export default Footer;

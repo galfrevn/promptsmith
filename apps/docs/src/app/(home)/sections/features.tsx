@@ -1,0 +1,52 @@
+"use client";
+
+import { motion } from "motion/react";
+import { BlurFade } from "@/components/ui/blur-fade";
+import FeatureCard from "../components/features/feature-card";
+import { features } from "../utils/features";
+
+const FeaturesSection = () => (
+  <section
+    aria-labelledby="features-title"
+    className="py-16 md:py-32"
+    id="features"
+  >
+    <div className="@container mx-auto max-w-5xl px-6">
+      <div className="w-full text-start lg:flex lg:px-12">
+        <BlurFade delay={0.5} inView>
+          <h2
+            className="text-balance font-normal text-4xl tracking-normal lg:text-5xl"
+            id="features-title"
+          >
+            The complete stack to build smarter prompts
+          </h2>
+        </BlurFade>
+        <BlurFade delay={0.5} inView>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Everything you need to go from idea to production fast, type-safe,
+            and fully integrated with your workflow.
+          </p>
+        </BlurFade>
+      </div>
+
+      <BlurFade delay={0.5} inView>
+        <div className="mx-auto mt-8 grid w-full place-items-center gap-6 *:text-center sm:grid-cols-1 md:mt-16 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((feature, index) => (
+            <motion.article
+              className="w-full"
+              initial={{ opacity: 0, y: 10 }}
+              key={feature.id}
+              transition={{ duration: 1, type: "tween", delay: index }}
+              viewport={{ once: true }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <FeatureCard {...feature} />
+            </motion.article>
+          ))}
+        </div>
+      </BlurFade>
+    </div>
+  </section>
+);
+
+export default FeaturesSection;

@@ -3,6 +3,8 @@ import "@/styles/globals.css";
 
 export { metadata } from "@/lib/metadata";
 
+import { Analytics } from "@vercel/analytics/next";
+
 import { Navbar } from "@/components/layout/navbar";
 import Footer from "./components/layout/footer";
 
@@ -19,6 +21,8 @@ export default function RootLayout({
         <Navbar />
         {children}
         <Footer />
+
+        <Analytics />
       </body>
     </html>
   );

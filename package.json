@@ -16,7 +16,9 @@
     "format": "biome format --write .",
     "prepare": "husky"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@vercel/analytics": "^1.5.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.3.2",
     "@commitlint/cli": "^20.1.0",

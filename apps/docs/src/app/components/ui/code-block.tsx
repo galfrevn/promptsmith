@@ -49,8 +49,10 @@ export const CodeBlock = ({
     >
       <div className="relative">
         <SyntaxHighlighter
-          language={language}
-          style={oneLight}
+          className="overflow-hidden dark:hidden"
+          codeTagProps={{
+            className: "font-mono text-sm",
+          }}
           customStyle={{
             margin: 0,
             padding: "1rem",
@@ -58,7 +60,7 @@ export const CodeBlock = ({
             background: "hsl(var(--background))",
             color: "hsl(var(--foreground))",
           }}
-          showLineNumbers={showLineNumbers}
+          language={language}
           lineNumberStyle={{
             color: "hsl(var(--muted-foreground))",
             paddingRight: "1rem",
@@ -67,13 +69,16 @@ export const CodeBlock = ({
           codeTagProps={{
             className: "font-mono text-sm",
           }}
-          className="dark:hidden overflow-hidden"
+          showLineNumbers={showLineNumbers}
+          style={oneLight}
         >
           {code}
         </SyntaxHighlighter>
         <SyntaxHighlighter
-          language={language}
-          style={oneDark}
+          className="hidden overflow-hidden dark:block"
+          codeTagProps={{
+            className: "font-mono text-sm",
+          }}
           customStyle={{
             margin: 0,
             padding: "1rem",
@@ -81,7 +86,7 @@ export const CodeBlock = ({
             background: "hsl(var(--background))",
             color: "hsl(var(--foreground))",
           }}
-          showLineNumbers={showLineNumbers}
+          language={language}
           lineNumberStyle={{
             color: "hsl(var(--muted-foreground))",
             paddingRight: "1rem",
@@ -90,12 +95,13 @@ export const CodeBlock = ({
           codeTagProps={{
             className: "font-mono text-sm",
           }}
-          className="hidden dark:block overflow-hidden"
+          showLineNumbers={showLineNumbers}
+          style={oneDark}
         >
           {code}
         </SyntaxHighlighter>
         {children && (
-          <div className="absolute right-2 top-2 flex items-center gap-2">
+          <div className="absolute top-2 right-2 flex items-center gap-2">
             {children}
           </div>
         )}
@@ -143,8 +149,6 @@ export const CodeBlockCopyButton = ({
     <Button
       className={cn("shrink-0", className)}
       onClick={copyToClipboard}
-      size="icon"
-      variant="ghost"
       {...props}
     >
       {children ?? <Icon size={14} />}

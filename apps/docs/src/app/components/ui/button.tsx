@@ -29,6 +29,7 @@ const Button = React.forwardRef<
     return (
       <motion.span whileTap={{ scale: 0.93 }}>
         {React.cloneElement(child, {
+          // @ts-ignore
           className: cn(child.props.className, classNames),
           ref,
           ...props,

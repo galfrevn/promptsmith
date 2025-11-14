@@ -19,7 +19,9 @@
       "!**/.alchemy",
       "!**/.svelte-kit",
       "!**/wrangler.jsonc",
-      "!**/.source"
+      "!**/.source",
+      "!**/examples",
+      "!**/docs"
     ]
   },
   "extends": ["ultracite/core"],

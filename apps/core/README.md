@@ -1,19 +1,55 @@
-# PromptSmith 🔨
-
 <div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/promptsmith-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/promptsmith-black.svg">
+    <img src="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/promptsmith-black.svg" alt="PromptSmith Logo" width="160" height="160">
+  </picture>
 
-**Stop wrestling with prompt strings. Start building AI agents that actually work.**
+  <h1 align="center">PromptSmith</h1>
 
-_Type-safe system prompt builder designed for production AI applications with the Vercel AI SDK_
+  <p align="center">
+    <strong>Type-Safe System Prompt Builder for Production AI Agents</strong>
+    <br />
+    Stop wrestling with prompt strings. Start building AI agents that actually work.
+  </p>
 
-[![npm version](https://img.shields.io/npm/v/promptsmith-ts.svg)](https://www.npmjs.com/package/promptsmith-ts)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
+  <p align="center">
+    <a href="https://www.npmjs.com/package/promptsmith-ts">
+      <img src="https://img.shields.io/npm/v/promptsmith-ts.svg?style=for-the-badge" alt="npm version">
+    </a>
+    <a href="https://www.npmjs.com/package/promptsmith-ts">
+      <img src="https://img.shields.io/npm/dm/promptsmith-ts.svg?style=for-the-badge" alt="npm downloads">
+    </a>
+    <a href="https://opensource.org/licenses/MIT">
+      <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License: MIT">
+    </a>
+    <a href="https://github.com/galfrevn/promptsmith/stargazers">
+      <img src="https://img.shields.io/github/stars/galfrevn/promptsmith?style=for-the-badge" alt="Stars">
+    </a>
+  </p>
 </div>
 
 ---
 
-## The Problem
+<div align="center">
+  <img src="https://raw.githubusercontent.com/galfrevn/promptsmith/main/assets/banner-short.png" alt="PromptSmith Banner" width="100%" style="max-width: 1200px; border-radius: 8px;">
+</div>
+
+---
+
+## Table of Contents
+
+- [Why PromptSmith?](#why-promptsmith)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage Examples](#usage-examples)
+- [API Reference](#api-reference)
+- [Advanced Patterns](#advanced-patterns)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Why PromptSmith?
 
 You're building an AI agent. You start with a simple string prompt. Then you need to add tools. Then constraints. Then examples. Before you know it, you're managing 500-line template strings, copy-pasting security rules, and debugging why your agent ignores half your instructions.
 
@@ -21,7 +57,7 @@ You're building an AI agent. You start with a simple string prompt. Then you nee
 
 ## The Solution
 
-PromptSmith gives you a structured, type-safe, testable way to build AI agent prompts that scale. Built specifically for the [Vercel AI SDK](https://sdk.vercel.ai/), it turns prompt engineering into software engineering.
+PromptSmith gives you a structured, type-safe, testable way to build AI agent prompts that scale. Works seamlessly with [Vercel AI SDK](https://sdk.vercel.ai/) and [Mastra](https://mastra.ai/), turning prompt engineering into software engineering.
 
 ```typescript
 import { createPromptBuilder } from "promptsmith-ts/builder";
@@ -77,20 +113,51 @@ Create base prompts and extend them. Merge security patterns across agents. DRY 
 
 Built-in testing framework. Run real LLM tests against your prompts before production.
 
+### ✅ **Built-In Validation**
+
+Automatic validation catches duplicate tools, missing identity, conflicting constraints, and more before deployment.
+
+### 🔍 **State Introspection**
+
+Query builder state dynamically with methods like `hasTools()`, `hasConstraints()`, and `getSummary()` for conditional logic.
+
+### 🐛 **Debug Mode**
+
+Comprehensive debug output shows your agent's configuration, validation status, and token usage estimates at a glance.
+
 ### 📦 **Production-Ready Templates**
 
 Start fast with pre-built templates for customer service, coding assistants, data analysis, and more.
 
 ## Installation
 
+### For Vercel AI SDK
+
 ```bash
 npm install promptsmith-ts zod ai
 ```
 
-**Peer Dependencies:**
-
+**Dependencies:**
 - `zod` - Schema validation and type inference
 - `ai` - Vercel AI SDK for LLM integration
+
+### For Mastra
+
+```bash
+npm install promptsmith-ts zod @mastra/core
+```
+
+**Dependencies:**
+- `zod` - Schema validation and type inference
+- `@mastra/core` - Mastra agent framework
+
+### Both Frameworks
+
+```bash
+npm install promptsmith-ts zod ai @mastra/core
+```
+
+Use PromptSmith with both frameworks in the same project for maximum flexibility.
 
 ## Use Cases
 
@@ -114,9 +181,16 @@ Build agents that search knowledge bases, summarize documents, and answer domain
 
 Enterprise agents with strict access controls, audit logging, and compliance requirements.
 
-## Quick Start with AI SDK
+## Quick Start
 
-### 1. **Simple Agent with Text Generation**
+PromptSmith works seamlessly with both Vercel AI SDK and Mastra. Choose the framework that fits your needs:
+
+- **Vercel AI SDK** - Lightweight, flexible, model-agnostic
+- **Mastra** - Full-featured agent framework with workflows, memory, and observability
+
+### Quick Start with Vercel AI SDK
+
+#### 1. **Simple Agent with Text Generation**
 
 ```typescript
 import { createPromptBuilder } from "promptsmith-ts/builder";
@@ -204,6 +278,42 @@ const { text } = await generateText({
 });
 ```
 
+### Quick Start with Mastra
+
+Use `.toMastra()` to eliminate tool duplication - define tools once and get both instructions and tools in Mastra format:
+
+```typescript
+import { Agent } from "@mastra/core/agent";
+import { createPromptBuilder } from "promptsmith-ts/builder";
+import { z } from "zod";
+
+const promptBuilder = createPromptBuilder()
+  .withIdentity("Weather information assistant")
+  .withCapabilities(["Provide current weather conditions"])
+  .withTool({
+    name: "get-weather",
+    description: "Get current weather for a location",
+    schema: z.object({
+      location: z.string(),
+      units: z.enum(["celsius", "fahrenheit"]).default("celsius"),
+    }),
+    execute: async ({ location, units }) => {
+      return await fetchWeather(location, units);
+    },
+  })
+  .withTone("Friendly and informative");
+
+// ✅ Single method exports both instructions and tools
+const { instructions, tools } = promptBuilder.toMastra();
+
+const weatherAgent = new Agent({
+  name: "weather-assistant",
+  instructions,
+  model: "anthropic/claude-3-5-sonnet",
+  tools, // Already in Mastra format
+});
+```
+
 ## 🚀 Features
 
 ### **Production-Ready Templates**
@@ -282,227 +392,86 @@ const billingSupport = baseSupport
 const secureAgent = baseSupport.merge(security());
 ```
 
-## Real-World Examples with AI SDK
+## Examples
 
-### 📦 **Next.js API Route - Customer Support**
+Comprehensive examples are available in the [examples directory](./examples). For detailed documentation and explanations, see [EXAMPLES.md](./examples/EXAMPLES.md).
+
+- **[AI SDK Examples](./examples/ai-sdk)** - Vercel AI SDK integration
+- **[Mastra Examples](./examples/mastra)** - Mastra framework integration
+- **[Advanced Patterns](./examples/advanced)** - Validation, conditional logic, debugging
+
+### Quick Links
+- [Basic Agent](./examples/ai-sdk/01-basic-agent.ts)
+- [Agent with Tools](./examples/ai-sdk/02-agent-with-tools.ts)
+- [Mastra with No Tool Duplication](./examples/mastra/02-agent-with-tools.ts)
+- [Validation](./examples/advanced/01-validation.ts)
+- [Conditional Logic](./examples/advanced/02-conditional-logic.ts)
+
+## Production Examples
+
+These condensed examples show key patterns. For complete, runnable code, see the [examples directory](./examples).
+
+### Next.js API Route
 
 ```typescript
-// app/api/chat/route.ts
 import { createPromptBuilder } from "promptsmith-ts/builder";
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
 
-const supportAgent = createPromptBuilder()
-  .withIdentity("You are TechStore's customer service assistant")
-  .withContext(
-    `
-    Store Hours: Mon-Fri 9AM-6PM EST
-    Return Policy: 30 days with receipt
-    Free shipping on orders over $50
-  `
-  )
-  .withCapabilities([
-    "Search products and check inventory",
-    "Track orders and shipments",
-    "Process returns and exchanges",
-  ])
-  .withTool({
-    name: "search_products",
-    description: "Search product catalog by query",
-    schema: z.object({
-      query: z.string(),
-      category: z.enum(["laptops", "phones", "accessories"]).optional(),
-      maxPrice: z.number().optional(),
-    }),
-    execute: async ({ query, category, maxPrice }) => {
-      const products = await db.products.search({
-        query,
-        category,
-        maxPrice,
-      });
-      return products;
-    },
-  })
-  .withTool({
-    name: "track_order",
-    description: "Get order status and tracking information",
-    schema: z.object({
-      orderId: z.string().describe("Order number (e.g., ORD-12345)"),
-    }),
-    execute: async ({ orderId }) => {
-      const order = await db.orders.findById(orderId);
-      return order;
-    },
-  })
-  .withConstraint(
-    "must",
-    "Always verify order number before processing returns"
-  )
-  .withConstraint(
-    "must_not",
-    "Never offer discounts beyond 10% without manager approval"
-  )
-  .withGuardrails()
-  .withTone("Friendly, professional, and helpful");
+const agent = createPromptBuilder()
+  .withIdentity("Customer service assistant")
+  .withCapabilities(["Search products", "Track orders"])
+  .withTool(/* ... */)
+  .withGuardrails();
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
-
   const result = await streamText({
     model: openai("gpt-4-turbo"),
-    ...supportAgent.toAiSdk(),
+    ...agent.toAiSdk(),
     messages,
   });
-
   return result.toDataStreamResponse();
 }
 ```
 
-### 🔐 **Secure Enterprise Agent**
+[📖 Full example](./examples/ai-sdk/04-customer-support.ts)
+
+### Secure Enterprise Agent
 
 ```typescript
-import { createPromptBuilder } from "promptsmith-ts/builder";
-import { security } from "promptsmith-ts/templates";
-import { generateObject } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { z } from "zod";
-
-const internalAgent = createPromptBuilder()
-  .withIdentity("You are a secure internal data assistant")
-  .withContext("Access Level: Employee | Department: Engineering")
-  .withTool({
-    name: "query_database",
-    description: "Query internal PostgreSQL database",
-    schema: z.object({
-      query: z.string().describe("SQL query to execute"),
-      database: z.enum(["users", "analytics", "logs"]),
-    }),
-    execute: async ({ query, database }) => {
-      // Sanitize and execute query
-      const sanitized = sanitizeSQL(query);
-      return await executeQuery(database, sanitized);
-    },
-  })
-  .merge(security()) // Add security patterns
-  .withForbiddenTopics([
-    "Salary information of other employees",
-    "Personal contact information",
-    "Source code from private repositories",
-  ])
-  .withConstraint("must", "Always audit log all database queries")
-  .withConstraint("must_not", "Never expose PII in responses")
-  .withErrorHandling(`
-    If a query fails or contains forbidden data:
-    1. Log the attempt with user ID and timestamp
-    2. Return a generic error message
-    3. Do not reveal the reason for the failure
-  `);
-
-const { object } = await generateObject({
-  model: anthropic("claude-3-5-sonnet-20241022"),
-  ...internalAgent.toAiSdk(),
-  prompt: "Show me the top 5 users by engagement this month",
-  schema: z.object({
-    users: z.array(
-      z.object({
-        id: z.string(),
-        username: z.string(),
-        engagementScore: z.number(),
-      })
-    ),
-  }),
-});
-```
-
-### 📊 **Data Analysis Agent with Multiple Tools**
-
-```typescript
-import { createPromptBuilder } from "promptsmith-ts/builder";
-import { dataAnalyst } from "promptsmith-ts/templates";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-
-const analystAgent = dataAnalyst()
-  .withTool({
-    name: "query_sales_data",
-    description: "Query sales database for analytics",
-    schema: z.object({
-      startDate: z.string().describe("ISO date string"),
-      endDate: z.string().describe("ISO date string"),
-      groupBy: z.enum(["day", "week", "month"]).optional(),
-    }),
-    execute: async ({ startDate, endDate, groupBy }) => {
-      return await salesDB.aggregate({ startDate, endDate, groupBy });
-    },
-  })
-  .withTool({
-    name: "create_chart",
-    description: "Generate a chart from data",
-    schema: z.object({
-      type: z.enum(["line", "bar", "pie"]),
-      data: z.array(z.object({ label: z.string(), value: z.number() })),
-      title: z.string(),
-    }),
-    execute: async ({ type, data, title }) => {
-      const chartUrl = await chartService.create({ type, data, title });
-      return { url: chartUrl };
-    },
-  })
-  .withExamples([
-    {
-      user: "Show me sales trends for Q1",
-      assistant:
-        "I'll query the sales data and create a chart. *uses query_sales_data* *uses create_chart*",
-      explanation: "Demonstrates multi-tool usage for analysis",
-    },
-  ]);
-
-const { text } = await generateText({
-  model: openai("gpt-4"),
-  ...analystAgent.toAiSdk(),
-  prompt: "Compare our sales performance: last month vs this month",
-});
-```
-
-### 🌐 **Multi-Model Support**
-
-PromptSmith works with any AI SDK provider:
-
-```typescript
-import { createPromptBuilder } from "promptsmith-ts/builder";
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-
 const agent = createPromptBuilder()
-  .withIdentity("You are a helpful assistant")
-  .withCapabilities(["Answer questions", "Provide insights"]);
+  .withIdentity("Secure data assistant")
+  .withTool(/* database query tool */)
+  .merge(security())
+  .withForbiddenTopics([/* PII restrictions */])
+  .withConstraint("must", "Audit log all queries");
+```
 
-const config = agent.toAiSdk();
+[📖 Full example](./examples/ai-sdk/06-secure-enterprise.ts)
 
-// Use with OpenAI
-const gpt4Response = await generateText({
-  model: openai("gpt-4-turbo"),
-  ...config,
-  prompt: "Explain quantum computing",
-});
+### Mastra Agent (No Tool Duplication)
 
-// Use with Anthropic
-const claudeResponse = await generateText({
-  model: anthropic("claude-3-5-sonnet-20241022"),
-  ...config,
-  prompt: "Explain quantum computing",
-});
+```typescript
+const builder = createPromptBuilder()
+  .withTool({
+    name: "search-products",
+    schema: z.object({ query: z.string() }),
+    execute: async ({ query }) => { /* ... */ },
+  });
 
-// Use with Google
-const geminiResponse = await generateText({
-  model: google("gemini-1.5-pro"),
-  ...config,
-  prompt: "Explain quantum computing",
+// ✅ Tools automatically converted - no duplication!
+const { instructions, tools } = builder.toMastra();
+
+const agent = new Agent({
+  name: "support",
+  instructions,
+  tools, // Already in Mastra format
+  model: "anthropic/claude-3-5-sonnet",
 });
 ```
+
+[📖 Full example](./examples/mastra/02-agent-with-tools.ts)
 
 ## Requirements
 
@@ -762,6 +731,295 @@ console.log(`Markdown: ${markdownPrompt.length} chars`);
 console.log(`TOON: ${toonPrompt.length} chars`);
 ```
 
+### Conditional Methods
+
+#### `withConstraintIf(condition: boolean, type: ConstraintType, rule: string | string[]): this`
+
+Conditionally adds a constraint or array of constraints based on a boolean condition.
+
+```typescript
+const isDevelopment = process.env.NODE_ENV === "development";
+
+builder
+  .withConstraintIf(isDevelopment, "must", "Include detailed debug information")
+  .withConstraintIf(!isDevelopment, "must_not", "Expose internal implementation details");
+
+// Supports array of constraints
+const adminRules = ["Access all user data", "Override security checks"];
+builder.withConstraintIf(isAdmin, "must", adminRules);
+```
+
+#### `withToolIf<T>(condition: boolean, def: ExecutableToolDefinition<T>): this`
+
+Conditionally adds a tool based on a boolean condition.
+
+```typescript
+const hasAdminPrivileges = user.role === "admin";
+
+builder.withToolIf(hasAdminPrivileges, {
+  name: "delete_user",
+  description: "Delete a user account",
+  schema: z.object({
+    userId: z.string(),
+  }),
+  execute: async ({ userId }) => {
+    return await db.users.delete(userId);
+  },
+});
+```
+
+### State Introspection
+
+Query the current state of the builder to make dynamic decisions.
+
+#### `hasIdentity(): boolean`
+
+Returns `true` if an identity has been set.
+
+```typescript
+if (!builder.hasIdentity()) {
+  builder.withIdentity("Default assistant");
+}
+```
+
+#### `hasTools(): boolean`
+
+Returns `true` if any tools have been registered.
+
+```typescript
+if (builder.hasTools()) {
+  console.log("Agent has tools available");
+}
+```
+
+#### `hasConstraints(): boolean`
+
+Returns `true` if any constraints have been added.
+
+```typescript
+if (!builder.hasConstraints()) {
+  builder.withConstraint("should", "Provide concise responses");
+}
+```
+
+#### `hasCapabilities(): boolean`
+
+Returns `true` if any capabilities have been defined.
+
+```typescript
+if (!builder.hasCapabilities()) {
+  throw new Error("Agent must have at least one capability");
+}
+```
+
+#### `hasExamples(): boolean`
+
+Returns `true` if any examples have been provided.
+
+```typescript
+if (!builder.hasExamples() && builder.hasTools()) {
+  console.warn("Warning: Tools defined but no usage examples provided");
+}
+```
+
+#### `hasGuardrails(): boolean`
+
+Returns `true` if security guardrails are enabled.
+
+```typescript
+if (!builder.hasGuardrails()) {
+  console.warn("Warning: Deploying agent without security guardrails");
+}
+```
+
+#### `hasForbiddenTopics(): boolean`
+
+Returns `true` if any forbidden topics have been defined.
+
+```typescript
+if (builder.hasForbiddenTopics()) {
+  console.log("Content restrictions active");
+}
+```
+
+#### `getConstraintsByType(type: ConstraintType): string[]`
+
+Returns all constraints of a specific type.
+
+```typescript
+const mustRules = builder.getConstraintsByType("must");
+const mustNotRules = builder.getConstraintsByType("must_not");
+
+console.log(`Found ${mustRules.length} required rules`);
+console.log(`Found ${mustNotRules.length} prohibited actions`);
+```
+
+#### `getSummary(): object`
+
+Returns a comprehensive summary of the builder's current state.
+
+```typescript
+const summary = builder.getSummary();
+console.log(summary);
+// {
+//   hasIdentity: true,
+//   capabilitiesCount: 3,
+//   toolsCount: 2,
+//   constraintsCount: 5,
+//   constraintsByType: { must: 2, must_not: 2, should: 1, should_not: 0 },
+//   examplesCount: 1,
+//   hasGuardrails: true,
+//   forbiddenTopicsCount: 2,
+//   format: 'markdown'
+// }
+```
+
+### Validation
+
+PromptSmith includes a built-in validation system to catch common issues before deployment.
+
+#### `validate(config?: Partial<ValidatorConfig>): ValidationResult`
+
+Validates the current builder state and returns a detailed report of errors, warnings, and recommendations.
+
+```typescript
+const result = builder.validate();
+
+if (result.errors.length > 0) {
+  console.error("Validation errors:", result.errors);
+}
+
+if (result.warnings.length > 0) {
+  console.warn("Validation warnings:", result.warnings);
+}
+
+if (result.info.length > 0) {
+  console.info("Recommendations:", result.info);
+}
+
+// Check if validation passed (no errors)
+if (result.isValid) {
+  console.log("Agent is ready for deployment");
+}
+```
+
+**Validation Checks:**
+
+- **Duplicate Tools**: Detects tools with the same name
+- **Missing Identity**: Warns if no identity is set
+- **Empty Sections**: Warns about empty capabilities or constraints
+- **Conflicting Constraints**: Detects contradictory must/must_not rules
+- **Recommendations**: Suggests adding examples for tools, enabling guardrails, etc.
+
+**Custom Validation Configuration:**
+
+```typescript
+// Disable specific checks
+const result = builder.validate({
+  checkDuplicateTools: false,
+  checkMissingIdentity: false,
+  checkEmptySections: true,
+  checkRecommendations: true,
+  checkConstraintConflicts: true,
+});
+```
+
+#### `withValidatorConfig(config: Partial<ValidatorConfig>): this`
+
+Sets a default validation configuration that will be used for all future `validate()` calls.
+
+```typescript
+builder.withValidatorConfig({
+  checkDuplicateTools: true,
+  checkMissingIdentity: true,
+  checkEmptySections: false, // Don't warn about empty sections
+});
+
+// This validate() call will use the configured settings
+const result = builder.validate();
+
+// Can still override per validation
+const strictResult = builder.validate({
+  checkEmptySections: true,
+});
+```
+
+**Formatted Validation Output:**
+
+```typescript
+import { formatValidationResult } from "promptsmith-ts/validation";
+
+const result = builder.validate();
+const formatted = formatValidationResult(result);
+
+console.log(formatted);
+// === Validation Report ===
+// Status: Invalid
+//
+// Errors (1):
+// - [DUPLICATE_TOOLS] Found duplicate tool names: search_products
+//
+// Warnings (2):
+// - [MISSING_IDENTITY] No identity set...
+// - [EMPTY_CAPABILITIES] No capabilities defined...
+//
+// Info (1):
+// - [TOOLS_WITHOUT_EXAMPLES] Consider adding examples...
+```
+
+### Debug Mode
+
+#### `debug(format?: PromptFormat): this`
+
+Outputs a comprehensive debug report to the console showing the current builder state, validation results, and prompt preview. Useful during development to understand your agent configuration.
+
+```typescript
+const agent = createPromptBuilder()
+  .withIdentity("Travel assistant")
+  .withCapabilities(["Book flights", "Find hotels"])
+  .withTool({
+    name: "search_flights",
+    description: "Search available flights",
+    schema: z.object({
+      from: z.string(),
+      to: z.string(),
+      date: z.string(),
+    }),
+  })
+  .withConstraint("must", "Always verify dates")
+  .withGuardrails()
+  .debug(); // Prints debug info and returns builder for chaining
+
+// Continue building
+agent.withTone("Friendly and helpful");
+```
+
+**Debug Output Example:**
+
+```
+PromptSmith Builder Debug
+
+Format: markdown | Identity: ✓ | Capabilities: 2 | Tools: 1
+Constraints: 1 (must: 1, must_not: 0, should: 0, should_not: 0)
+Examples: 0 | Guardrails: ✓ | Forbidden Topics: 0
+
+Identity: "Travel assistant"
+
+Capabilities (2):
+  1. Book flights
+  2. Find hotels
+
+Tools (1):
+  - search_flights [executable]
+
+Warnings: Consider adding examples for tools
+Suggestions: Add behavioral constraints
+
+Preview: # Identity Travel assistant # Capabilities 1. Book flights...
+Size: 450 chars (~113 tokens)
+TOON format: 320 chars (~80 tokens) - saves 29%
+```
+
 ### Output Methods
 
 #### `build(format?: PromptFormat): string`
@@ -810,6 +1068,28 @@ Exports tools in Vercel AI SDK format. Tools without an `execute` function will 
 ```typescript
 const tools = builder.toAiSdkTools();
 ```
+
+#### `toMastra(): { instructions: string; tools: Record<string, MastraTool> }`
+
+Exports configuration for Mastra agents with tools automatically converted to Mastra's format. **This eliminates tool duplication** - define tools once in PromptSmith and they're automatically converted for Mastra.
+
+```typescript
+import { Agent } from "@mastra/core/agent";
+
+const { instructions, tools } = builder.toMastra();
+
+const agent = new Agent({
+  name: "my-agent",
+  instructions,
+  model: "openai/gpt-4o",
+  tools, // Already in Mastra format
+});
+```
+
+**How it works:**
+- `name` → `id`
+- `schema` → `inputSchema`
+- `execute` function signature adapted from `({ params })` to `({ context })`
 
 #### `getTools(): ExecutableToolDefinition[]`
 
@@ -1089,7 +1369,15 @@ import type {
   ConstraintType,
   Example,
   AiSdkConfig,
+  PromptFormat,
 } from "promptsmith-ts/builder";
+
+import type {
+  ValidationResult,
+  ValidationIssue,
+  ValidatorConfig,
+  PromptValidator,
+} from "promptsmith-ts/validation";
 ```
 
 ### Schema Utilities (Internal)
@@ -1178,15 +1466,18 @@ const result = await generateText({
 
 ### The Difference
 
-| Feature                | Manual Prompts      | PromptSmith                |
-| ---------------------- | ------------------- | -------------------------- |
-| **Type Safety**        | ❌ None             | ✅ Full TypeScript support |
-| **Tool Integration**   | ❌ Manual sync      | ✅ Automatic from schemas  |
-| **Reusability**        | ❌ Copy-paste       | ✅ Compose & extend        |
-| **Security**           | ❌ DIY              | ✅ Built-in guardrails     |
-| **Testing**            | ❌ Manual           | ✅ Automated framework     |
-| **Maintainability**    | ❌ 500-line strings | ✅ Structured & organized  |
-| **AI SDK Integration** | ❌ Manual config    | ✅ `.toAiSdk()`            |
+| Feature                   | Manual Prompts      | PromptSmith                      |
+| ------------------------- | ------------------- | -------------------------------- |
+| **Type Safety**           | ❌ None             | ✅ Full TypeScript support       |
+| **Tool Integration**      | ❌ Manual sync      | ✅ Automatic from schemas        |
+| **Reusability**           | ❌ Copy-paste       | ✅ Compose & extend              |
+| **Security**              | ❌ DIY              | ✅ Built-in guardrails           |
+| **Testing**               | ❌ Manual           | ✅ Automated framework           |
+| **Validation**            | ❌ None             | ✅ Pre-deployment checks         |
+| **Maintainability**       | ❌ 500-line strings | ✅ Structured & organized        |
+| **Framework Support**     | ❌ Manual config    | ✅ AI SDK + Mastra native        |
+| **Token Optimization**    | ❌ Manual           | ✅ TOON format (30-60% savings)  |
+| **Debug Tools**           | ❌ None             | ✅ Built-in debug mode           |
 
 ## What's Next?
 

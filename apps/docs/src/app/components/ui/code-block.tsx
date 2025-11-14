@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { CheckIcon, CopyIcon } from 'lucide-react';
-import type { ComponentProps, HTMLAttributes, ReactNode } from 'react';
-import { createContext, useContext, useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { CheckIcon, CopyIcon } from "lucide-react";
+import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
+import { createContext, useContext, useState } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   oneDark,
   oneLight,
-} from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Button } from '@/components/ui/button';
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Button } from "@/components/ui/button";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 type CodeBlockContextType = {
@@ -21,7 +21,7 @@ type CodeBlockContextType = {
 };
 
 const CodeBlockContext = createContext<CodeBlockContextType>({
-  code: '',
+  code: "",
 });
 
 export type CodeBlockProps = HTMLAttributes<HTMLDivElement> & {
@@ -42,7 +42,7 @@ export const CodeBlock = ({
   <CodeBlockContext.Provider value={{ code }}>
     <div
       className={cn(
-        'relative w-full overflow-hidden rounded-md border bg-background text-foreground',
+        "relative w-full overflow-hidden rounded-md border bg-background text-foreground",
         className,
       )}
       {...props}
@@ -53,19 +53,19 @@ export const CodeBlock = ({
           style={oneLight}
           customStyle={{
             margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))',
+            padding: "1rem",
+            fontSize: "0.875rem",
+            background: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
           }}
           showLineNumbers={showLineNumbers}
           lineNumberStyle={{
-            color: 'hsl(var(--muted-foreground))',
-            paddingRight: '1rem',
-            minWidth: '2.5rem',
+            color: "hsl(var(--muted-foreground))",
+            paddingRight: "1rem",
+            minWidth: "2.5rem",
           }}
           codeTagProps={{
-            className: 'font-mono text-sm',
+            className: "font-mono text-sm",
           }}
           className="dark:hidden overflow-hidden"
         >
@@ -76,19 +76,19 @@ export const CodeBlock = ({
           style={oneDark}
           customStyle={{
             margin: 0,
-            padding: '1rem',
-            fontSize: '0.875rem',
-            background: 'hsl(var(--background))',
-            color: 'hsl(var(--foreground))',
+            padding: "1rem",
+            fontSize: "0.875rem",
+            background: "hsl(var(--background))",
+            color: "hsl(var(--foreground))",
           }}
           showLineNumbers={showLineNumbers}
           lineNumberStyle={{
-            color: 'hsl(var(--muted-foreground))',
-            paddingRight: '1rem',
-            minWidth: '2.5rem',
+            color: "hsl(var(--muted-foreground))",
+            paddingRight: "1rem",
+            minWidth: "2.5rem",
           }}
           codeTagProps={{
-            className: 'font-mono text-sm',
+            className: "font-mono text-sm",
           }}
           className="hidden dark:block overflow-hidden"
         >
@@ -122,8 +122,8 @@ export const CodeBlockCopyButton = ({
   const { code } = useContext(CodeBlockContext);
 
   const copyToClipboard = async () => {
-    if (typeof window === 'undefined' || !navigator.clipboard.writeText) {
-      onError?.(new Error('Clipboard API not available'));
+    if (typeof window === "undefined" || !navigator.clipboard.writeText) {
+      onError?.(new Error("Clipboard API not available"));
       return;
     }
 
@@ -141,7 +141,7 @@ export const CodeBlockCopyButton = ({
 
   return (
     <Button
-      className={cn('shrink-0', className)}
+      className={cn("shrink-0", className)}
       onClick={copyToClipboard}
       size="icon"
       variant="ghost"

@@ -1,6 +1,5 @@
 "use client";
 
-import { type ClassValue, clsx } from "clsx";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { createContext, useContext, useState } from "react";
@@ -9,8 +8,9 @@ import {
   oneDark,
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -43,7 +43,7 @@ export const CodeBlock = ({
     <div
       className={cn(
         "relative w-full overflow-hidden rounded-md border bg-background text-foreground",
-        className
+        className,
       )}
       {...props}
     >
@@ -65,6 +65,9 @@ export const CodeBlock = ({
             color: "hsl(var(--muted-foreground))",
             paddingRight: "1rem",
             minWidth: "2.5rem",
+          }}
+          codeTagProps={{
+            className: "font-mono text-sm",
           }}
           showLineNumbers={showLineNumbers}
           style={oneLight}
@@ -88,6 +91,9 @@ export const CodeBlock = ({
             color: "hsl(var(--muted-foreground))",
             paddingRight: "1rem",
             minWidth: "2.5rem",
+          }}
+          codeTagProps={{
+            className: "font-mono text-sm",
           }}
           showLineNumbers={showLineNumbers}
           style={oneDark}

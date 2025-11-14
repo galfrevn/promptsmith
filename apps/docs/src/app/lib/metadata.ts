@@ -23,7 +23,7 @@ export const siteConfig = {
   ],
 };
 
-export const baseMetadata: Metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
     default: `${siteConfig.name} — ${siteConfig.slogan}`,

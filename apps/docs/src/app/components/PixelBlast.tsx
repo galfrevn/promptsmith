@@ -133,7 +133,7 @@ const createTouchTexture = () => {
 
 const createLiquidEffect = (
   texture: THREE.Texture,
-  opts?: { strength?: number; freq?: number }
+  opts?: { strength?: number; freq?: number },
 ) => {
   const fragment = `
     uniform sampler2D uTexture;
@@ -446,7 +446,7 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         uClickPos: {
           value: Array.from(
             { length: MAX_CLICKS },
-            () => new THREE.Vector2(-1, -1)
+            () => new THREE.Vector2(-1, -1),
           ),
         },
         uClickTimes: { value: new Float32Array(MAX_CLICKS) },
@@ -482,12 +482,12 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         renderer.setSize(w, h, false);
         uniforms.uResolution.value.set(
           renderer.domElement.width,
-          renderer.domElement.height
+          renderer.domElement.height,
         );
         if (threeRef.current?.composer)
           threeRef.current.composer.setSize(
             renderer.domElement.width,
-            renderer.domElement.height
+            renderer.domElement.height,
           );
         uniforms.uPixelSize.value = pixelSize * renderer.getPixelRatio();
       };
@@ -530,13 +530,13 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         }
         const noiseEffect = new Effect(
           "NoiseEffect",
-          "uniform float uTime; uniform float uAmount; float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);} void mainUv(inout vec2 uv){} void mainImage(const in vec4 inputColor,const in vec2 uv,out vec4 outputColor){ float n=hash(floor(uv*vec2(1920.0,1080.0))+floor(uTime*60.0)); float g=(n-0.5)*uAmount; outputColor=inputColor+vec4(vec3(g),0.0);} ",
+          `uniform float uTime; uniform float uAmount; float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453);} void mainUv(inout vec2 uv){} void mainImage(const in vec4 inputColor,const in vec2 uv,out vec4 outputColor){ float n=hash(floor(uv*vec2(1920.0,1080.0))+floor(uTime*60.0)); float g=(n-0.5)*uAmount; outputColor=inputColor+vec4(vec3(g),0.0);} `,
           {
             uniforms: new Map<string, THREE.Uniform>([
               ["uTime", new THREE.Uniform(0)],
               ["uAmount", new THREE.Uniform(noiseAmount)],
             ]),
-          }
+          },
         );
         const noisePass = new EffectPass(camera, noiseEffect);
         noisePass.renderToScreen = true;
@@ -685,6 +685,7 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
       aria-label="PixelBlast interactive background"
       className={`relative h-full w-full overflow-hidden ${className ?? ""}`}
       ref={containerRef}
+      className={`w-full h-full relative overflow-hidden ${className ?? ""}`}
       style={style}
     />
   );

@@ -17,9 +17,9 @@ export const MobileNavbarMenu = () => {
   return (
     <DropdownMenu onOpenChange={setIsOpen} open={isOpen}>
       <DropdownMenuTrigger asChild>
-        <span>
+        <button type="button">
           <PromptsmithIcons.Menu aria-hidden="true" />
-        </span>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="mt-2 ml-10 w-40 bg-background px-4 py-4">
         <DropdownMenuRadioGroup>

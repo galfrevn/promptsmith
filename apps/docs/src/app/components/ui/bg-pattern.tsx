@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 
 type BGVariantType =
@@ -61,7 +61,7 @@ function geBgImage(variant: BGVariantType, fill: string, size: number) {
     case "checkerboard":
       return `linear-gradient(45deg, ${fill} 25%, transparent 25%), linear-gradient(-45deg, ${fill} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${fill} 75%), linear-gradient(-45deg, transparent 75%, ${fill} 75%)`;
     default:
-      return;
+      return undefined;
   }
 }
 
@@ -82,7 +82,7 @@ const BGPattern = ({
       className={cn(
         "absolute inset-0 z-[-10] size-full",
         maskClasses[mask],
-        className
+        className,
       )}
       style={{
         backgroundImage,

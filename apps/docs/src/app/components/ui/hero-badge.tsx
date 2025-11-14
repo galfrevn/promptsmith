@@ -50,7 +50,7 @@ export default function HeroBadge({
     "inline-flex items-center rounded-full border transition-colors",
     badgeVariants[variant],
     sizeVariants[size],
-    className
+    className,
   );
 
   const badgeContent = (

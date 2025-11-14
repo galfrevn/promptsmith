@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import { Effect, EffectComposer, EffectPass, RenderPass } from "postprocessing";
+import type React from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { EffectComposer, EffectPass, RenderPass, Effect } from "postprocessing";
 
 type PixelBlastVariant = "square" | "circle" | "triangle" | "diamond";
 
@@ -97,7 +98,7 @@ const createTouchTexture = () => {
       const d = Math.sqrt(dd);
       vx = dx / (d || 1);
       vy = dy / (d || 1);
-      force = Math.min(dd * 10000, 1);
+      force = Math.min(dd * 10_000, 1);
     }
     last = { x: norm.x, y: norm.y };
     trail.push({ x: norm.x, y: norm.y, age: 0, force, vx, vy });
@@ -437,7 +438,7 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       container.appendChild(renderer.domElement);
       if (transparent) renderer.setClearAlpha(0);
-      else renderer.setClearColor(0x000000, 1);
+      else renderer.setClearColor(0x00_00_00, 1);
       const uniforms = {
         uResolution: { value: new THREE.Vector2(0, 0) },
         uTime: { value: 0 },
@@ -500,7 +501,7 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         ) {
           const u32 = new Uint32Array(1);
           window.crypto.getRandomValues(u32);
-          return u32[0] / 0xffffffff;
+          return u32[0] / 0xff_ff_ff_ff;
         }
         return Math.random();
       };
@@ -632,7 +633,7 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
       t.uniforms.uRippleSpeed.value = rippleSpeed;
       t.uniforms.uEdgeFade.value = edgeFade;
       if (transparent) t.renderer.setClearAlpha(0);
-      else t.renderer.setClearColor(0x000000, 1);
+      else t.renderer.setClearColor(0x00_00_00, 1);
       if (t.liquidEffect) {
         const uStrength = (t.liquidEffect as any).uniforms.get("uStrength");
         if (uStrength) uStrength.value = liquidStrength;
@@ -681,10 +682,11 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
 
   return (
     <div
+      aria-label="PixelBlast interactive background"
+      className={`relative h-full w-full overflow-hidden ${className ?? ""}`}
       ref={containerRef}
       className={`w-full h-full relative overflow-hidden ${className ?? ""}`}
       style={style}
-      aria-label="PixelBlast interactive background"
     />
   );
 };

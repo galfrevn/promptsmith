@@ -125,6 +125,77 @@ export interface ExecutableToolDefinition<T extends z.ZodType = z.ZodType>
 }
 
 /**
+ * Mastra-compatible tool definition.
+ *
+ * This interface represents a tool created with Mastra's `createTool()` function
+ * from the `@mastra/core/tools` package. PromptSmith can automatically detect and
+ * convert these tools to its internal format for seamless interoperability.
+ *
+ * Key differences from PromptSmith tools:
+ * - Uses `id` instead of `name`
+ * - Uses `inputSchema` instead of `schema`
+ * - Has optional `outputSchema` for return type validation
+ * - `execute` receives additional context parameters (runtimeContext, tracingContext, abortSignal)
+ *
+ * @see https://mastra.ai/docs/tools-mcp/overview
+ *
+ * @example
+ * ```typescript
+ * import { createTool } from "@mastra/core/tools";
+ * import { z } from "zod";
+ *
+ * const weatherTool = createTool({
+ *   id: "weather-tool",
+ *   description: "Get weather for a location",
+ *   inputSchema: z.object({ location: z.string() }),
+ *   execute: async ({ context }) => {
+ *     return await fetchWeather(context.location);
+ *   }
+ * });
+ *
+ * // Can be used directly with PromptSmith
+ * builder.withTool(weatherTool); // Auto-detected and converted
+ * ```
+ */
+export type MastraToolDefinition = {
+  /**
+   * Unique identifier for the tool (Mastra's equivalent of `name`)
+   */
+  id: string;
+
+  /**
+   * Human-readable description of what the tool does
+   */
+  description: string;
+
+  /**
+   * Zod schema defining the tool's input parameters (Mastra's equivalent of `schema`)
+   */
+  inputSchema: z.ZodType;
+
+  /**
+   * Optional Zod schema defining the tool's output structure
+   */
+  outputSchema?: z.ZodType;
+
+  /**
+   * Execution function for the tool.
+   *
+   * Receives an object with:
+   * - `context`: The parsed input based on inputSchema
+   * - `runtimeContext`: Runtime context for accessing shared state
+   * - `tracingContext`: AI tracing context for observability
+   * - `abortSignal`: Signal for aborting the tool execution
+   */
+  execute?: (args: {
+    context: unknown;
+    runtimeContext?: unknown;
+    tracingContext?: unknown;
+    abortSignal?: AbortSignal;
+  }) => Promise<unknown> | unknown;
+};
+
+/**
  * Severity levels for behavioral constraints.
  *
  * These levels communicate different degrees of requirement to the AI model:

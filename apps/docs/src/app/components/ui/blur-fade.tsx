@@ -4,6 +4,7 @@ import { useRef } from "react";
 import {
   AnimatePresence,
   motion,
+  type UseInViewOptions,
   useInView,
   UseInViewOptions,
   Variants,
@@ -48,17 +49,17 @@ export function BlurFade({
   return (
     <AnimatePresence>
       <motion.div
-        ref={ref}
-        initial="hidden"
         animate={isInView ? "visible" : "hidden"}
+        className={className}
         exit="hidden"
-        variants={combinedVariants}
+        initial="hidden"
+        ref={ref}
         transition={{
           delay: 0.04 + delay,
           duration,
           ease: "easeOut",
         }}
-        className={className}
+        variants={combinedVariants}
       >
         {children}
       </motion.div>

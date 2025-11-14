@@ -21,7 +21,7 @@ const Button = React.forwardRef<
 >(({ asChild = false, children, className, ...props }, ref) => {
   const classNames = cn(
     "justify flex h-12 items-center rounded-lg bg-primary px-6 text-white",
-    className,
+    className
   );
 
   if (asChild && React.isValidElement(children)) {

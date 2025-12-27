@@ -118,7 +118,7 @@ async function main() {
             ],
           },
           reasoning:
-            "US city use fahrenheit, 'this week' means 7-day forecast",
+            "US city, use Fahrenheit, 'this week' means 7-day forecast",
         },
       ],
     })

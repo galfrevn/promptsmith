@@ -1958,6 +1958,24 @@ export class SystemPromptBuilder {
         sections.push(`${tool.description}\n\n`);
         sections.push("**Parameters:**\n");
         sections.push(`${parseZodSchema(tool.schema)}\n`);
+
+        // Add tool examples if present
+        if (tool.examples && tool.examples.length > 0) {
+          sections.push("\n**Usage Examples:**\n");
+          for (const example of tool.examples) {
+            sections.push(`- **Scenario:** ${example.scenario}\n`);
+            sections.push(
+              `  **Parameters:** \`${JSON.stringify(example.parameters)}\`\n`
+            );
+            sections.push(
+              `  **Returns:** \`${JSON.stringify(example.output)}\`\n`
+            );
+            if (example.reasoning) {
+              sections.push(`  **Reasoning:** ${example.reasoning}\n`);
+            }
+          }
+          sections.push("\n");
+        }
       }
     }
 
@@ -2192,6 +2210,19 @@ export class SystemPromptBuilder {
           const paramLines = params.split("\n");
           for (const line of paramLines) {
             lines.push(`      ${line}`);
+          }
+        }
+
+        // Add tool examples if present
+        if (tool.examples && tool.examples.length > 0) {
+          lines.push(`    Examples[${tool.examples.length}]:`);
+          for (const example of tool.examples) {
+            lines.push(`      - ${example.scenario}`);
+            lines.push(`        params: ${JSON.stringify(example.parameters)}`);
+            lines.push(`        returns: ${JSON.stringify(example.output)}`);
+            if (example.reasoning) {
+              lines.push(`        why: ${example.reasoning}`);
+            }
           }
         }
       }
@@ -2504,4 +2535,5 @@ export type {
   ExecutableToolDefinition,
   PromptFormat,
   ToolDefinition,
+  ToolExample,
 } from "./types";

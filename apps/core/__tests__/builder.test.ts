@@ -3427,4 +3427,234 @@ Line 3: Final notes`;
       expect(() => builder.debug()).not.toThrow();
     });
   });
+
+  describe("Tool Examples", () => {
+    test("should accept tools with examples including output", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "get_weather",
+        description: "Get weather",
+        schema: z.object({
+          location: z.string(),
+          units: z.enum(["celsius", "fahrenheit"]).optional(),
+        }),
+        examples: [
+          {
+            scenario: "User asks for weather in Tokyo",
+            parameters: { location: "Tokyo", units: "celsius" },
+            output: { temp: 22, condition: "Sunny", humidity: 60 },
+            reasoning: "Direct location mentioned",
+          },
+        ],
+      });
+
+      const tools = builder.getTools();
+      expect(tools).toHaveLength(1);
+      expect(tools[0].examples).toBeDefined();
+      expect(tools[0].examples?.[0].output).toEqual({
+        temp: 22,
+        condition: "Sunny",
+        humidity: 60,
+      });
+    });
+
+    test("should render tool examples in markdown format with output", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "search",
+        description: "Search database",
+        schema: z.object({ query: z.string() }),
+        examples: [
+          {
+            scenario: "User asks 'Find all users'",
+            parameters: { query: "SELECT * FROM users" },
+            output: [
+              { id: 1, name: "John" },
+              { id: 2, name: "Jane" },
+            ],
+            reasoning: "Direct query request",
+          },
+          {
+            scenario: "User asks 'Show me orders'",
+            parameters: { query: "SELECT * FROM orders" },
+            output: [{ id: 1, total: 100 }],
+          },
+        ],
+      });
+
+      const prompt = builder.build("markdown");
+
+      expect(prompt).toContain("Usage Examples:");
+      expect(prompt).toContain("User asks 'Find all users'");
+      expect(prompt).toContain('"query":"SELECT * FROM users"');
+      expect(prompt).toContain("Returns:");
+      expect(prompt).toContain("Direct query request");
+      expect(prompt).toContain("User asks 'Show me orders'");
+    });
+
+    test("should render tool examples in TOON format with output", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "calculator",
+        description: "Perform calculations",
+        schema: z.object({
+          operation: z.enum(["add", "subtract", "multiply", "divide"]),
+          a: z.number(),
+          b: z.number(),
+        }),
+        examples: [
+          {
+            scenario: "User asks 'What is 5 + 3?'",
+            parameters: { operation: "add", a: 5, b: 3 },
+            output: 8,
+            reasoning: "Simple addition",
+          },
+        ],
+      });
+
+      const prompt = builder.build("toon");
+
+      expect(prompt).toContain("Examples[1]:");
+      expect(prompt).toContain("User asks 'What is 5 + 3?'");
+      expect(prompt).toContain("params:");
+      expect(prompt).toContain("returns:");
+      expect(prompt).toContain("why: Simple addition");
+    });
+
+    test("should work with tools without examples", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "simple_tool",
+        description: "A simple tool",
+        schema: z.object({ param: z.string() }),
+      });
+
+      const prompt = builder.build();
+      expect(prompt).toContain("simple_tool");
+      expect(prompt).not.toContain("Usage Examples:");
+    });
+
+    test("should handle multiple tools with mixed examples", () => {
+      const builder = createPromptBuilder()
+        .withTool({
+          name: "tool_with_examples",
+          description: "Tool 1",
+          schema: z.object({ x: z.string() }),
+          examples: [
+            {
+              scenario: "Example scenario",
+              parameters: { x: "test" },
+              output: "result",
+            },
+          ],
+        })
+        .withTool({
+          name: "tool_without_examples",
+          description: "Tool 2",
+          schema: z.object({ y: z.number() }),
+        });
+
+      const prompt = builder.build();
+      expect(prompt).toContain("tool_with_examples");
+      expect(prompt).toContain("tool_without_examples");
+      expect(prompt).toContain("Example scenario");
+    });
+
+    test("should handle examples with optional reasoning", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "test_tool",
+        description: "Test",
+        schema: z.object({ input: z.string() }),
+        examples: [
+          {
+            scenario: "With reasoning",
+            parameters: { input: "test1" },
+            output: "output1",
+            reasoning: "This is why",
+          },
+          {
+            scenario: "Without reasoning",
+            parameters: { input: "test2" },
+            output: "output2",
+          },
+        ],
+      });
+
+      const prompt = builder.build();
+      expect(prompt).toContain("With reasoning");
+      expect(prompt).toContain("This is why");
+      expect(prompt).toContain("Without reasoning");
+      expect(prompt).not.toContain("Reasoning: undefined");
+    });
+
+    test("should preserve examples when extending builder", () => {
+      const base = createPromptBuilder().withTool({
+        name: "base_tool",
+        description: "Base",
+        schema: z.object({ param: z.string() }),
+        examples: [
+          {
+            scenario: "Base example",
+            parameters: { param: "value" },
+            output: "result",
+          },
+        ],
+      });
+
+      const extended = base.extend();
+      const tools = extended.getTools();
+
+      expect(tools[0].examples).toHaveLength(1);
+      expect(tools[0].examples?.[0].scenario).toBe("Base example");
+      expect(tools[0].examples?.[0].output).toBe("result");
+    });
+
+    test("should merge tools with examples correctly", () => {
+      const builder1 = createPromptBuilder().withTool({
+        name: "tool1",
+        description: "First tool",
+        schema: z.object({ a: z.string() }),
+        examples: [
+          { scenario: "Example 1", parameters: { a: "test" }, output: "res1" },
+        ],
+      });
+
+      const builder2 = createPromptBuilder().withTool({
+        name: "tool2",
+        description: "Second tool",
+        schema: z.object({ b: z.number() }),
+        examples: [
+          { scenario: "Example 2", parameters: { b: 42 }, output: "res2" },
+        ],
+      });
+
+      builder1.merge(builder2);
+      const tools = builder1.getTools();
+
+      expect(tools).toHaveLength(2);
+      expect(tools[0].examples?.[0].scenario).toBe("Example 1");
+      expect(tools[1].examples?.[0].scenario).toBe("Example 2");
+    });
+
+    test("should handle complex output objects in examples", () => {
+      const builder = createPromptBuilder().withTool({
+        name: "fetch_user",
+        description: "Fetch user data",
+        schema: z.object({ userId: z.number() }),
+        examples: [
+          {
+            scenario: "Fetch user by ID",
+            parameters: { userId: 123 },
+            output: {
+              id: 123,
+              name: "John Doe",
+              email: "john@example.com",
+              roles: ["admin", "user"],
+            },
+          },
+        ],
+      });
+
+      const prompt = builder.build();
+      expect(prompt).toContain("Returns:");
+      expect(prompt).toContain("john@example.com");
+      expect(prompt).toContain("admin");
+    });
+  });
 });
